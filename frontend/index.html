@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProScore AI — Premium Sports Predictions</title>
+  <meta name="description" content="AI-powered sports predictions across 100+ football leagues, NBA, ATP/WTA, NHL, and NFL." />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Configuration Tailwind personnalisée -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              600: '#334155',
+              700: '#1e293b',
+              800: '#0f172a',
+              900: '#020617',
+              950: '#010309',
+            },
+            neon: {
+              green: '#39FF14',
+              blue: '#00D4FF',
+            },
+          },
+          animation: {
+            'pulse-neon': 'pulse-neon 2s ease-in-out infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+            'slide-up': 'slide-up 0.3s ease-out',
+          },
+          keyframes: {
+            'pulse-neon': {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.6' },
+            },
+            'glow': {
+              '0%': { boxShadow: '0 0 5px #39FF14, 0 0 10px #39FF14' },
+              '100%': { boxShadow: '0 0 20px #39FF14, 0 0 40px #39FF14' },
+            },
+            'slide-up': {
+              '0%': { transform: 'translateY(10px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Police Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .glass-card { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(30, 41, 59, 0.5); border-radius: 1rem; }
+    .neon-text { color: #39FF14; text-shadow: 0 0 10px rgba(57, 255, 20, 0.5), 0 0 20px rgba(57, 255, 20, 0.3); }
+    .gradient-text { background: linear-gradient(90deg, #39FF14, #00D4FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+  </style>
+</head>
+
+<body class="bg-dark-900 text-slate-100 min-h-screen">
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="sticky top-0 z-50 border-b border-dark-800 bg-dark-900/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="#" class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-gradient-to-br from-neon-green to-neon-blue rounded-lg flex items-center justify-center">
+            <span class="text-dark-900 font-black text-sm">PS</span>
+          </div>
+          <span class="text-xl font-black text-white">Pro<span class="text-neon-green">Score</span></span>
+        </a>
+
+        <div class="flex items-center gap-3">
+          <!-- Sélecteur de langue -->
+          <select id="langSelector" class="bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-sm text-slate-200 cursor-pointer">
+            <option value="fr">🇫🇷 FR</option>
+            <option value="en">🇬🇧 EN</option>
+            <option value="es">🇪🇸 ES</option>
+            <option value="ar">🇸🇦 AR</option>
+          </select>
+
+          <!-- Zone Auth -->
+          <div id="authArea" class="flex items-center gap-2">
+            <button onclick="showAuthModal('login')" class="text-sm text-slate-300 hover:text-white px-3 py-2">Log In</button>
+            <button onclick="showAuthModal('register')" class="px-4 py-2 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl text-sm">Sign Up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="relative overflow-hidden py-16 lg:py-24">
+    <div class="absolute inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800"></div>
+    <div class="absolute top-20 left-10 w-72 h-72 bg-neon-green/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-20 right-10 w-96 h-96 bg-neon-blue/5 rounded-full blur-3xl"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 border border-neon-green/30 rounded-full bg-neon-green/5">
+        <span class="w-2 h-2 bg-neon-green rounded-full animate-pulse"></span>
+        <span class="text-sm font-medium text-neon-green" data-i18n="live">Live Predictions Available</span>
+      </div>
+
+      <h1 class="text-4xl md:text-6xl font-black mb-4">
+        <span class="text-white">Pro</span><span class="gradient-text">Score</span><span class="text-white"> AI</span>
+      </h1>
+      <p class="text-lg md:text-xl text-slate-400 mb-8 max-w-2xl mx-auto" data-i18n="hero">
+        Premium AI-Powered Sports Predictions — 100+ Football leagues, NBA, ATP/WTA, NHL, NFL.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <div class="glass-card px-4 py-2 text-sm">⚽ 100+ Football</div>
+        <div class="glass-card px-4 py-2 text-sm">🏀 40 Basketball</div>
+        <div class="glass-card px-4 py-2 text-sm">🎾 Grand Slams</div>
+        <div class="glass-card px-4 py-2 text-sm">🏒 NHL</div>
+        <div class="glass-card px-4 py-2 text-sm">🏈 NFL</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <div class="mb-8">
+      <h2 class="text-3xl font-black text-white mb-2" data-i18n="dashboardTitle">Today's Predictions</h2>
+      <p class="text-slate-400" data-i18n="dashboardSubtitle">AI-powered picks across all supported sports and leagues</p>
+    </div>
+
+    <!-- Onglets Sports + Date -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div id="sportTabs" class="flex items-center gap-2 overflow-x-auto pb-2 w-full sm:w-auto">
+        <!-- Généré par JS -->
+      </div>
+      <input type="date" id="dateSelector" class="bg-dark-800 border border-dark-600 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-neon-green" />
+    </div>
+
+    <!-- Zone messages -->
+    <div id="messageArea"></div>
+
+    <!-- Zone matchs -->
+    <div id="matchesContainer" class="space-y-8"></div>
+
+    <!-- Loading -->
+    <div id="loadingSpinner" class="hidden text-center py-16">
+      <div class="inline-block animate-spin h-10 w-10 border-4 border-neon-green border-t-transparent rounded-full"></div>
+      <p class="text-slate-400 mt-4">Loading predictions...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-16">
+      <p class="text-5xl mb-4">📭</p>
+      <p class="text-slate-400 text-lg">No matches found for this date</p>
+      <p class="text-slate-500 text-sm mt-1">Try selecting a different date or sport</p>
+    </div>
+  </main>
+
+  <!-- ============ PRICING ============ -->
+  <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-black text-white mb-2">Choose Your <span class="gradient-text">Plan</span></h2>
+      <p class="text-slate-400">Cancel anytime. All plans include all 5 sports.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- SILVER -->
+      <div class="glass-card p-6 border-t-4 border-gray-400 hover:scale-105 transition-transform">
+        <h3 class="text-xl font-bold text-white">Silver</h3>
+        <p class="text-4xl font-black text-white mt-2">$19<span class="text-sm font-normal text-slate-400">/mo</span></p>
+        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+          <li>✓ 1X2 Results</li>
+          <li>✓ Total Goals/Points</li>
+          <li>✓ Both Teams Score</li>
+          <li>✓ All Sports</li>
+        </ul>
+        <button onclick="subscribe('silver')" class="w-full mt-6 py-3 border border-slate-600 hover:border-neon-green text-white rounded-xl font-semibold">Get Silver</button>
+      </div>
+
+      <!-- GOLD -->
+      <div class="glass-card p-6 border-t-4 border-yellow-500 ring-2 ring-yellow-500/30 md:scale-105 relative">
+        <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-black bg-yellow-500 text-dark-900 rounded-full">MOST POPULAR</span>
+        <h3 class="text-xl font-bold text-white">Gold</h3>
+        <p class="text-4xl font-black text-white mt-2">$39<span class="text-sm font-normal text-slate-400">/mo</span></p>
+        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+          <li>✓ Everything in Silver</li>
+          <li>✓ 🎯 Exact Score</li>
+          <li>✓ 📊 Corners & Fouls</li>
+          <li>✓ Double Chance</li>
+        </ul>
+        <button onclick="subscribe('gold')" class="w-full mt-6 py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 rounded-xl font-bold">Get Gold</button>
+      </div>
+
+      <!-- VIP -->
+      <div class="glass-card p-6 border-t-4 border-orange-500 hover:scale-105 transition-transform">
+        <h3 class="text-xl font-bold text-white">VIP</h3>
+        <p class="text-4xl font-black text-white mt-2">$79<span class="text-sm font-normal text-slate-400">/mo</span></p>
+        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+          <li>✓ Everything in Gold</li>
+          <li>✓ ⚽ Goalscorers</li>
+          <li>✓ 🏆 Asian Handicap</li>
+          <li>✓ 📝 Analyst Notes</li>
+        </ul>
+        <button onclick="subscribe('vip')" class="w-full mt-6 py-3 border border-orange-500 hover:bg-orange-500/10 text-white rounded-xl font-semibold">Get VIP</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-dark-800 py-8 text-center">
+    <p class="text-slate-500 text-sm">© <span id="currentYear"></span> ProScore AI. All rights reserved.</p>
+  </footer>
+
+  <!-- ============ AUTH MODAL ============ -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card p-8 w-full max-w-md">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="authTitle" class="text-2xl font-bold text-white">Sign In</h3>
+        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white text-2xl">×</button>
+      </div>
+
+      <div id="authError" class="hidden p-3 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-sm mb-4"></div>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+        <div id="displayNameField" class="hidden">
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Display Name</label>
+          <input type="text" id="displayName" placeholder="John Doe"
+                 class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
+          <input type="email" id="authEmail" required placeholder="you@example.com"
+                 class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••"
+                 class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
+        </div>
+
+        <button type="submit" id="authSubmitBtn"
+                class="w-full py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl">
+          Sign In
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-slate-400 mt-4">
+        <span id="authSwitchText">Don't have an account?</span>
+        <button onclick="toggleAuthMode()" class="text-neon-green hover:underline ml-1" id="authSwitchBtn">Sign up</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SCRIPT PRINCIPAL — Toute la logique de l'app               -->
+  <!-- ============================================================ -->
+  <script>
+    // ============================================
+    // CONFIGURATION — MODIFIEZ L'URL DE L'API ICI
+    // ============================================
+    const API_URL = 'https://proscore-ai-api.onrender.com/api';
+    // En local pour développer : 'http://localhost:4000/api'
+
+    // ============================================
+    // ÉTAT GLOBAL
+    // ============================================
+    let currentUser = null;
+    let currentToken = localStorage.getItem('proscore_token') || null;
+    let activeSport = 'all';
+    let selectedDate = new Date().toISOString().split('T')[0];
+    let authMode = 'login';
+    let currentLang = localStorage.getItem('proscore_lang') || 'fr';
+
+    // ============================================
+    // TRADUCTIONS
+    // ============================================
+    const TRANSLATIONS = {
+      fr: {
+        live: 'Pronostics en direct disponibles',
+        hero: 'Pronostics sportifs premium alimentés par IA — 100+ ligues de football, NBA, ATP/WTA, NHL, NFL.',
+        dashboardTitle: "Pronostics du jour",
+        dashboardSubtitle: 'Sélections IA sur tous les sports et ligues',
+        allSports: 'Tous les sports',
+        football: '⚽ Football',
+        basketball: '🏀 Basketball',
+        tennis: '🎾 Tennis',
+        hockey: '🏒 Hockey',
+        american_football: '🏈 Football US',
+        noMatches: 'Aucun match trouvé pour cette date',
+        loading: 'Chargement...',
+        unlock: 'Débloquer',
+        exactScore: 'Score Exact',
+        totalGoals: 'Total Buts',
+        corners: 'Corners',
+        fouls: 'Fautes',
+        goalscorers: 'Buteurs',
+        confidence: 'de confiance',
+        finalResult: 'Pronostic 1X2 :',
+        homeWin: 'Victoire domicile',
+        draw: 'Match nul',
+        awayWin: 'Victoire extérieur',
+        signIn: 'Connexion',
+        signUp: 'Inscription',
+      },
+      en: {
+        live: 'Live Predictions Available',
+        hero: 'Premium AI-Powered Sports Predictions — 100+ Football leagues, NBA, ATP/WTA, NHL, NFL.',
+        dashboardTitle: "Today's Predictions",
+        dashboardSubtitle: 'AI-powered picks across all supported sports and leagues',
+        allSports: 'All Sports',
+        football: '⚽ Football',
+        basketball: '🏀 Basketball',
+        tennis: '🎾 Tennis',
+        hockey: '🏒 Ice Hockey',
+        american_football: '🏈 American Football',
+        noMatches: 'No matches found for this date',
+        loading: 'Loading...',
+        unlock: 'Unlock',
+        exactScore: 'Exact Score',
+        totalGoals: 'Total Goals',
+        corners: 'Corners',
+        fouls: 'Fouls',
+        goalscorers: 'Goalscorers',
+        confidence: 'confidence',
+        finalResult: '1X2 Tip:',
+        homeWin: 'Home Win',
+        draw: 'Draw',
+        awayWin: 'Away Win',
+        signIn: 'Sign In',
+        signUp: 'Sign Up',
+      },
+      es: {
+        live: 'Pronósticos en vivo disponibles',
+        hero: 'Pronósticos deportivos premium con IA — 100+ ligas de fútbol, NBA, ATP/WTA, NHL, NFL.',
+        dashboardTitle: 'Pronósticos de hoy',
+        dashboardSubtitle: 'Selecciones con IA en todos los deportes y ligas',
+        allSports: 'Todos los deportes',
+        football: '⚽ Fútbol',
+        basketball: '🏀 Baloncesto',
+        tennis: '🎾 Tenis',
+        hockey: '🏒 Hockey',
+        american_football: '🏈 Fútbol americano',
+        noMatches: 'No hay partidos para esta fecha',
+        loading: 'Cargando...',
+        unlock: 'Desbloquear',
+        exactScore: 'Marcador Exacto',
+        totalGoals: 'Total Goles',
+        corners: 'Córners',
+        fouls: 'Faltas',
+        goalscorers: 'Goleadores',
+        confidence: 'de confianza',
+        finalResult: 'Pronóstico 1X2:',
+        homeWin: 'Victoria local',
+        draw: 'Empate',
+        awayWin: 'Victoria visitante',
+        signIn: 'Iniciar sesión',
+        signUp: 'Registrarse',
+      },
+      ar: {
+        live: 'توقعات مباشرة متاحة',
+        hero: 'توقعات رياضية مميزة بالذكاء الاصطناعي — 100+ دوري كرة قدم، NBA، ATP/WTA، NHL، NFL.',
+        dashboardTitle: 'توقعات اليوم',
+        dashboardSubtitle: 'اختيارات مدعومة بالذكاء الاصطناعي لجميع الرياضات والدوريات',
+        allSports: 'جميع الرياضات',
+        football: '⚽ كرة القدم',
+        basketball: '🏀 كرة السلة',
+        tennis: '🎾 التنس',
+        hockey: '🏒 هوكي الجليد',
+        american_football: '🏈 كرة القدم الأمريكية',
+        noMatches: 'لم يتم العثور على مباريات لهذا التاريخ',
+        loading: '...جارٍ التحميل',
+        unlock: 'فتح',
+        exactScore: 'النتيجة الدقيقة',
+        totalGoals: 'إجمالي الأهداف',
+        corners: 'ركنيات',
+        fouls: 'أخطاء',
+        goalscorers: 'الهدافون',
+        confidence: 'ثقة',
+        finalResult: 'توقع 1X2:',
+        homeWin: 'فوز المضيف',
+        draw: 'تعادل',
+        awayWin: 'فوز الضيف',
+        signIn: 'تسجيل الدخول',
+        signUp: 'إنشاء حساب',
+      },
+    };
+
+    const t = (key) => TRANSLATIONS[currentLang][key] || key;
+
+    // ============================================
+    // SPORTS
+    // ============================================
+    const SPORTS = [
+      { key: 'all', label: 'allSports', icon: '🏆' },
+      { key: 'football', label: 'football', icon: '⚽' },
+      { key: 'basketball', label: 'basketball', icon: '🏀' },
+      { key: 'tennis', label: 'tennis', icon: '🎾' },
+      { key: 'hockey', label: 'hockey', icon: '🏒' },
+      { key: 'american_football', label: 'american_football', icon: '🏈' },
+    ];
+
+    // ============================================
+    // API CLIENT
+    // ============================================
+    async function apiRequest(endpoint, options = {}) {
+      const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+      if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+        const data = await res.json();
+
+        if (res.status === 401) {
+          currentToken = null;
+          currentUser = null;
+          localStorage.removeItem('proscore_token');
+          updateAuthUI();
+        }
+
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        return data;
+      } catch (err) {
+        console.error('API error:', err);
+        throw err;
+      }
+    }
+
+    // ============================================
+    // AUTH
+    // ============================================
+    function showAuthModal(mode) {
+      authMode = mode;
+      document.getElementById('authModal').classList.remove('hidden');
+      document.getElementById('authTitle').innerText = mode === 'login' ? t('signIn') : t('signUp');
+      document.getElementById('authSubmitBtn').innerText = mode === 'login' ? t('signIn') : t('signUp');
+      document.getElementById('displayNameField').classList.toggle('hidden', mode === 'login');
+      document.getElementById('authSwitchText').innerText = mode === 'login' ? "Don't have an account?" : 'Already have an account?';
+      document.getElementById('authSwitchBtn').innerText = mode === 'login' ? t('signUp') : t('signIn');
+      document.getElementById('authError').classList.add('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+      document.getElementById('authForm').reset();
+    }
+
+    function toggleAuthMode() {
+      showAuthModal(authMode === 'login' ? 'register' : 'login');
+    }
+
+    async function handleAuth(event) {
+      event.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+      const displayName = document.getElementById('displayName').value;
+      const errorEl = document.getElementById('authError');
+      errorEl.classList.add('hidden');
+
+      try {
+        const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+        const body = authMode === 'login' ? { email, password } : { email, password, displayName };
+
+        const res = await apiRequest(endpoint, { method: 'POST', body: JSON.stringify(body) });
+        currentToken = res.data.token;
+        currentUser = res.data.user;
+        localStorage.setItem('proscore_token', currentToken);
+        closeAuthModal();
+        updateAuthUI();
+        loadMatches();
+      } catch (err) {
+        errorEl.innerText = err.message;
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      currentToken = null;
+      currentUser = null;
+      localStorage.removeItem('proscore_token');
+      updateAuthUI();
+      loadMatches();
+    }
+
+    function updateAuthUI() {
+      const authArea = document.getElementById('authArea');
+      if (currentUser) {
+        const tierBadge = currentUser.tier ? `· ${currentUser.tier.toUpperCase()}` : '';
+        authArea.innerHTML = `
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-medium text-white">${currentUser.email}</p>
+            <p class="text-xs text-slate-400 capitalize">${currentUser.role || 'free'} ${tierBadge}</p>
+          </div>
+          <button onclick="logout()" class="text-sm text-slate-400 hover:text-red-400 px-3 py-2">Logout</button>
+        `;
+      } else {
+        authArea.innerHTML = `
+          <button onclick="showAuthModal('login')" class="text-sm text-slate-300 hover:text-white px-3 py-2">${t('signIn')}</button>
+          <button onclick="showAuthModal('register')" class="px-4 py-2 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl text-sm">${t('signUp')}</button>
+        `;
+      }
+    }
+
+    async function refreshProfile() {
+      if (!currentToken) return;
+      try {
+        const res = await apiRequest('/auth/profile');
+        currentUser = res.data;
+        updateAuthUI();
+      } catch {
+        currentToken = null;
+        currentUser = null;
+        localStorage.removeItem('proscore_token');
+        updateAuthUI();
+      }
+    }
+
+    // ============================================
+    // SPORT TABS
+    // ============================================
+    function renderSportTabs() {
+      const container = document.getElementById('sportTabs');
+      container.innerHTML = SPORTS.map(sport => `
+        <button onclick="setActiveSport('${sport.key}')"
+          class="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeSport === sport.key
+              ? 'bg-neon-green/20 text-neon-green border border-neon-green/30'
+              : 'bg-dark-800 text-slate-300 border border-dark-700 hover:border-dark-600'
+          }">
+          ${sport.icon} ${t(sport.label)}
+        </button>
+      `).join('');
+    }
+
+    function setActiveSport(sport) {
+      activeSport = sport;
+      renderSportTabs();
+      loadMatches();
+    }
+
+    // ============================================
+    // PREDICTIONS FEED
+    // ============================================
+    async function loadMatches() {
+      const loading = document.getElementById('loadingSpinner');
+      const empty = document.getElementById('emptyState');
+      const container = document.getElementById('matchesContainer');
+      const messageArea = document.getElementById('messageArea');
+
+      loading.classList.remove('hidden');
+      empty.classList.add('hidden');
+      container.innerHTML = '';
+      messageArea.innerHTML = '';
+
+      try {
+        const params = new URLSearchParams({ date: selectedDate });
+        if (activeSport !== 'all') params.set('sport', activeSport);
+
+        const res = await apiRequest(`/predictions/feed?${params.toString()}`);
+        const matches = res.data.matches || [];
+
+        loading.classList.add('hidden');
+
+        if (matches.length === 0) {
+          empty.querySelector('p:nth-child(2)').innerText = t('noMatches');
+          empty.classList.remove('hidden');
+          return;
+        }
+
+        renderMatches(matches);
+      } catch (err) {
+        loading.classList.add('hidden');
+        messageArea.innerHTML = `
+          <div class="p-4 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-center mb-6">
+            ⚠️ ${err.message} — Vérifiez que le backend est accessible sur ${API_URL}
+          </div>
+        `;
+      }
+    }
+
+    function renderMatches(matches) {
+      // Groupe par ligue
+      const grouped = matches.reduce((acc, item) => {
+        const key = item.match.league_name;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+
+      const container = document.getElementById('matchesContainer');
+      container.innerHTML = Object.entries(grouped).map(([league, leagueMatches]) => `
+        <div class="animate-slide-up">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-1 h-6 bg-neon-green rounded-full"></div>
+            <h3 class="text-lg font-bold text-white">${league}</h3>
+            <span class="text-xs text-slate-500">${leagueMatches.length} match${leagueMatches.length > 1 ? 'es' : ''}</span>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            ${leagueMatches.map(m => renderMatchCard(m)).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderMatchCard({ match, prediction }) {
+      const matchTime = new Date(match.match_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const isLocked = (v) => v === null || v === '🔒';
+
+      const tierBadgeColor = {
+        silver: 'bg-slate-700/50 text-slate-300 border-slate-500/30',
+        gold: 'bg-yellow-900/50 text-yellow-400 border-yellow-500/30',
+        vip: 'bg-orange-900/50 text-orange-400 border-orange-500/30',
+      };
+
+      // 1X2 result label
+      let resultLabel = '';
+      if (prediction?.final_result) {
+        if (prediction.final_result === '1') resultLabel = match.team_home;
+        else if (prediction.final_result === '2') resultLabel = match.team_away;
+        else resultLabel = t('draw');
+      }
+
+      return `
+        <div class="glass-card p-5 hover:border-slate-600 transition-all">
+          <!-- Header : Ligue + Tier -->
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">${match.league_name}</span>
+            ${prediction ? `
+              <span class="text-xs px-2 py-0.5 rounded-full font-bold border ${tierBadgeColor[prediction.tier_required] || tierBadgeColor.silver}">
+                ${prediction.tier_required.toUpperCase()}
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- Équipes + horaire -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex-1 min-w-0">
+              <p class="text-base font-bold text-white truncate">${match.team_home}</p>
+              <p class="text-base font-bold text-white truncate">${match.team_away}</p>
+            </div>
+            <div class="text-center px-3 flex-shrink-0">
+              ${match.status === 'finished' || match.status === 'live'
+                ? `<p class="text-2xl font-black text-white">${match.score_home ?? '-'} : ${match.score_away ?? '-'}</p>`
+                : `<p class="text-xl font-bold text-slate-300">${matchTime}</p><p class="text-xs text-slate-500">Kick-off</p>`}
+            </div>
+          </div>
+
+          ${prediction ? `
+            <!-- 1X2 (visible pour tous) -->
+            ${prediction.final_result ? `
+              <div class="flex items-center gap-3 mb-4 flex-wrap">
+                <span class="text-xs text-slate-400">${t('finalResult')}</span>
+                <span class="px-3 py-1 bg-neon-green/10 border border-neon-green/30 rounded-lg text-neon-green font-bold text-sm">
+                  ${resultLabel}
+                </span>
+                ${prediction.confidence_pct > 0 ? `<span class="text-xs text-slate-400">${prediction.confidence_pct}% ${t('confidence')}</span>` : ''}
+              </div>
+            ` : ''}
+
+            <!-- Marchés premium avec paywall -->
+            <div class="space-y-2">
+              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Premium Markets</h4>
+
+              <div class="grid grid-cols-2 gap-2">
+                <!-- Score Exact -->
+                ${renderMarket('exactScore', prediction.exact_score, prediction.tier_required, isLocked(prediction.exact_score))}
+
+                <!-- Total Goals -->
+                ${prediction.total_goals_points ? `
+                  <div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20">
+                    <p class="text-xs text-slate-400 mb-0.5">${t('totalGoals')}</p>
+                    <p class="text-lg font-black neon-text">${prediction.total_goals_points}</p>
+                  </div>
+                ` : ''}
+
+                <!-- Corners -->
+                ${prediction.total_corners !== undefined ? renderMarket('corners', prediction.total_corners, prediction.tier_required, isLocked(prediction.total_corners)) : ''}
+
+                <!-- Fouls -->
+                ${prediction.total_fouls !== undefined ? renderMarket('fouls', prediction.total_fouls, prediction.tier_required, isLocked(prediction.total_fouls)) : ''}
+              </div>
+
+              <!-- Goalscorers -->
+              ${prediction.goalscorers !== undefined ? renderGoalscorers(prediction.goalscorers, prediction.tier_required, isLocked(prediction.goalscorers)) : ''}
+
+              ${prediction.analyst_note ? `
+                <div class="bg-dark-800/30 rounded-xl p-3 border border-dark-600 mt-2">
+                  <p class="text-xs text-slate-400 mb-1">📝 Analyst Note</p>
+                  <p class="text-sm text-slate-200">${prediction.analyst_note}</p>
+                </div>
+              ` : ''}
+            </div>
+          ` : `
+            <div class="text-center py-4 text-sm text-slate-500">No prediction available</div>
+          `}
+        </div>
+      `;
+    }
+
+    // Rendu d'un marché individuel avec paywall par flou
+    function renderMarket(labelKey, value, tierRequired, locked) {
+      if (locked) {
+        return `
+          <div class="relative overflow-hidden rounded-xl min-h-[80px]">
+            <!-- Placeholder flouté -->
+            <div class="absolute inset-0 bg-gradient-to-br from-dark-700/60 to-dark-800/60"></div>
+            <div class="absolute inset-0 flex items-center justify-center opacity-20">
+              <p class="text-2xl font-black text-slate-400">2 - 1</p>
+            </div>
+            <div class="absolute inset-0 backdrop-blur-md"></div>
+            <!-- CTA overlay -->
+            <div class="relative z-10 flex flex-col items-center justify-center py-3 px-2 text-center">
+              <p class="text-xs text-slate-300 mb-2">${t(labelKey)}</p>
+              <button onclick="subscribe('${tierRequired}')" class="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 animate-pulse-neon">
+                🔒 ${t('unlock')} ${tierRequired.toUpperCase()}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      if (value === null || value === undefined) return '';
+      return `
+        <div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20">
+          <p class="text-xs text-slate-400 mb-0.5">${t(labelKey)}</p>
+          <p class="text-lg font-black neon-text">${value}</p>
+        </div>
+      `;
+    }
+
+    function renderGoalscorers(goalscorers, tierRequired, locked) {
+      if (locked) {
+        return `
+          <div class="relative overflow-hidden rounded-xl min-h-[80px] mt-2">
+            <div class="absolute inset-0 bg-gradient-to-br from-dark-700/60 to-dark-800/60"></div>
+            <div class="absolute inset-0 backdrop-blur-md"></div>
+            <div class="relative z-10 flex flex-col items-center justify-center py-4 text-center">
+              <p class="text-xs text-slate-300 mb-2">⚽ ${t('goalscorers')}</p>
+              <button onclick="subscribe('vip')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 animate-pulse-neon">
+                🔒 ${t('unlock')} VIP — $79/mo
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      if (!goalscorers || goalscorers.length === 0) return '';
+      return `
+        <div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20 mt-2">
+          <p class="text-xs text-slate-400 mb-2">⚽ ${t('goalscorers')}</p>
+          <div class="flex flex-wrap gap-2">
+            ${goalscorers.map(s => `<span class="px-3 py-1 bg-neon-green/10 text-neon-green text-sm font-semibold rounded-full border border-neon-green/30">${s}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ============================================
+    // SUBSCRIBE (Stripe)
+    // ============================================
+    async function subscribe(tier) {
+      if (!currentUser) {
+        showAuthModal('register');
+        return;
+      }
+      try {
+        const res = await apiRequest('/stripe/create-checkout-session', {
+          method: 'POST',
+          body: JSON.stringify({ tier }),
+        });
+        if (res.data.url) {
+          window.location.href = res.data.url;
+        }
+      } catch (err) {
+        alert(`Erreur : ${err.message}`);
+      }
+    }
+
+    // ============================================
+    // LANGUE
+    // ============================================
+    function applyLanguage() {
+      document.documentElement.setAttribute('lang', currentLang);
+      document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.innerText = t(key);
+      });
+
+      renderSportTabs();
+      updateAuthUI();
+      loadMatches();
+    }
+
+    document.getElementById('langSelector').addEventListener('change', (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem('proscore_lang', currentLang);
+      applyLanguage();
+    });
+
+    // ============================================
+    // INITIALISATION
+    // ============================================
+    document.getElementById('currentYear').innerText = new Date().getFullYear();
+    document.getElementById('dateSelector').value = selectedDate;
+    document.getElementById('dateSelector').addEventListener('change', (e) => {
+      selectedDate = e.target.value;
+      loadMatches();
+    });
+    document.getElementById('langSelector').value = currentLang;
+
+    // Boot
+    applyLanguage();
+    if (currentToken) refreshProfile();
+  </script>
+</body>
+</html>
