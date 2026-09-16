@@ -1,0 +1,401 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+
+// Types
+type Sport = 'football' | 'basketball' | 'tennis' | 'hockey' | 'american_football';
+
+interface Match {
+  id: string;
+  sport: Sport;
+  league_name: string;
+  team_home: string;
+  team_away: string;
+  match_date: string;
+  status: string;
+  score_home: number | null;
+  score_away: number | null;
+}
+
+interface Prediction {
+  id: string;
+  tier_required: string;
+  final_result: string | null;
+  exact_score: string | null;
+  total_goals_points: string | null;
+  total_corners: string | null;
+  total_fouls: string | null;
+  goalscorers: string[] | null;
+  both_teams_score: string | null;
+  confidence_pct: number;
+  is_winning: boolean | null;
+  analyst_note: string | null;
+}
+
+interface MatchWithPrediction {
+  match: Match;
+  prediction: Prediction | null;
+}
+
+const SPORTS_TABS = [
+  { key: 'all', label: '🏆 All Sports' },
+  { key: 'football', label: '⚽ Football' },
+  { key: 'basketball', label: '🏀 Basketball' },
+  { key: 'tennis', label: '🎾 Tennis' },
+  { key: 'hockey', label: '🏒 Hockey' },
+  { key: 'american_football', label: '🏈 NFL' },
+];
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
+export default function DashboardPage() {
+  const [activeSport, setActiveSport] = useState('all');
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+  const [matches, setMatches] = useState<MatchWithPrediction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Récupérer le token d'authentification
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('proscore_token');
+    }
+    return null;
+  };
+
+  // Charger les matchs depuis l'API
+  useEffect(() => {
+    const fetchFeed = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const params = new URLSearchParams();
+        params.set('date', selectedDate);
+        if (activeSport !== 'all') params.set('sport', activeSport);
+
+        const token = getToken();
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(
+          `${API_URL}/predictions/feed?${params.toString()}`,
+          { headers }
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          setMatches(data.data.matches || []);
+        } else {
+          setError(data.error || 'Failed to load');
+        }
+      } catch (err: any) {
+        setError('Connection error. Is the backend running?');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeed();
+  }, [activeSport, selectedDate]);
+
+  // Grouper les matchs par ligue
+  const grouped = matches.reduce<Record<string, MatchWithPrediction[]>>(
+    (acc, item) => {
+      const key = item.match.league_name;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    },
+    {}
+  );
+
+  // Vérifier si un champ est verrouillé
+  const isLocked = (value: any) => value === null || value === '🔒';
+
+  return (
+    <div className="min-h-screen bg-[#020617] text-white">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+
+        {/* En-tête */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-black mb-2">
+            Today&apos;s Predictions
+          </h1>
+          <p className="text-slate-400">
+            AI-powered picks across all supported sports and leagues
+          </p>
+        </div>
+
+        {/* Onglets Sports + Date */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+            {SPORTS_TABS.map((sport) => (
+              <button
+                key={sport.key}
+                onClick={() => setActiveSport(sport.key)}
+                className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  activeSport === sport.key
+                    ? 'bg-[#39FF14]/20 text-[#39FF14] border border-[#39FF14]/30'
+                    : 'bg-[#0f172a] text-slate-400 border border-slate-700 hover:border-slate-500'
+                }`}
+              >
+                {sport.label}
+              </button>
+            ))}
+          </div>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-xl text-white"
+          />
+        </div>
+
+        {/* Chargement */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin h-10 w-10 border-4 border-[#39FF14] border-t-transparent rounded-full" />
+          </div>
+        )}
+
+        {/* Erreur */}
+        {error && !isLoading && (
+          <div className="text-center py-20">
+            <p className="text-red-400 text-lg">{error}</p>
+          </div>
+        )}
+
+        {/* Aucun match */}
+        {!isLoading && !error && matches.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-5xl mb-4">📭</p>
+            <p className="text-slate-400 text-lg">No matches found for this date</p>
+            <p className="text-slate-500 text-sm mt-1">
+              Try selecting a different date or sport
+            </p>
+          </div>
+        )}
+
+        {/* Liste des matchs groupés par ligue */}
+        {!isLoading && Object.entries(grouped).map(([league, leagueMatches]) => (
+          <div key={league} className="mb-8">
+            {/* Nom de la ligue */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-1 h-6 bg-[#39FF14] rounded-full" />
+              <h3 className="text-lg font-bold">{league}</h3>
+              <span className="text-xs text-slate-500">
+                {leagueMatches.length} match{leagueMatches.length > 1 ? 'es' : ''}
+              </span>
+            </div>
+
+            {/* Grille de cartes */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {leagueMatches.map(({ match, prediction }) => {
+                const matchTime = new Date(match.match_date).toLocaleTimeString(
+                  'en-US', { hour: '2-digit', minute: '2-digit', hour12: false }
+                );
+
+                return (
+                  <div
+                    key={match.id}
+                    className="bg-[#0f172a]/80 backdrop-blur-md border border-slate-800 rounded-2xl p-5 hover:border-slate-600 transition-all"
+                  >
+                    {/* En-tête : Ligue + Tier */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        {match.league_name}
+                      </span>
+                      {prediction && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                          prediction.tier_required === 'vip'
+                            ? 'bg-orange-900/50 text-orange-400 border border-orange-500/30'
+                            : prediction.tier_required === 'gold'
+                            ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-slate-700/50 text-slate-300 border border-slate-500/30'
+                        }`}>
+                          {prediction.tier_required.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Équipes */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-lg font-bold">{match.team_home}</p>
+                        <p className="text-lg font-bold">{match.team_away}</p>
+                      </div>
+                      <div className="text-center px-4">
+                        {match.status === 'finished' || match.status === 'live' ? (
+                          <p className="text-2xl font-black">
+                            {match.score_home ?? '-'} : {match.score_away ?? '-'}
+                          </p>
+                        ) : (
+                          <p className="text-xl font-bold text-slate-400">
+                            {matchTime}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Pronostic 1X2 (visible pour tous) */}
+                    {prediction?.final_result && (
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className="text-xs text-slate-400">1X2 Tip:</span>
+                        <span className="px-3 py-1 bg-[#39FF14]/10 border border-[#39FF14]/30 rounded-lg text-[#39FF14] font-bold text-sm">
+                          {prediction.final_result === '1'
+                            ? match.team_home
+                            : prediction.final_result === '2'
+                            ? match.team_away
+                            : 'Draw'}
+                        </span>
+                        {prediction.confidence_pct > 0 && (
+                          <span className="text-xs text-slate-500">
+                            {prediction.confidence_pct}% confidence
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Marchés Premium */}
+                    {prediction && (
+                      <div className="mt-4 space-y-2">
+                        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Premium Markets
+                        </h4>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Score Exact */}
+                          {isLocked(prediction.exact_score) ? (
+                            <div className="relative overflow-hidden rounded-xl">
+                              <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-md" />
+                              <div className="relative z-10 flex flex-col items-center justify-center py-4 text-center">
+                                <p className="text-xs text-slate-400 mb-1">Exact Score</p>
+                                <Link
+                                  href="/subscribe"
+                                  className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#39FF14] to-[#00D4FF] text-[#020617] animate-pulse"
+                                >
+                                  🔒 Unlock {prediction.tier_required.toUpperCase()}
+                                </Link>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-slate-800/50 rounded-xl p-3 border border-[#39FF14]/20">
+                              <p className="text-xs text-slate-400">Exact Score</p>
+                              <p className="text-lg font-black" style={{ color: '#39FF14', textShadow: '0 0 10px rgba(57,255,20,0.5)' }}>
+                                {prediction.exact_score}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Total Goals */}
+                          {prediction.total_goals_points && (
+                            <div className="bg-slate-800/50 rounded-xl p-3 border border-[#39FF14]/20">
+                              <p className="text-xs text-slate-400">Total Goals</p>
+                              <p className="text-lg font-black" style={{ color: '#39FF14', textShadow: '0 0 10px rgba(57,255,20,0.5)' }}>
+                                {prediction.total_goals_points}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Corners */}
+                          {isLocked(prediction.total_corners) ? (
+                            <div className="relative overflow-hidden rounded-xl">
+                              <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-md" />
+                              <div className="relative z-10 flex flex-col items-center justify-center py-4 text-center">
+                                <p className="text-xs text-slate-400 mb-1">Corners</p>
+                                <Link
+                                  href="/subscribe"
+                                  className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#39FF14] to-[#00D4FF] text-[#020617] animate-pulse"
+                                >
+                                  🔒 Unlock
+                                </Link>
+                              </div>
+                            </div>
+                          ) : prediction.total_corners ? (
+                            <div className="bg-slate-800/50 rounded-xl p-3 border border-[#39FF14]/20">
+                              <p className="text-xs text-slate-400">Corners</p>
+                              <p className="text-lg font-black" style={{ color: '#39FF14' }}>
+                                {prediction.total_corners}
+                              </p>
+                            </div>
+                          ) : null}
+
+                          {/* Fouls */}
+                          {isLocked(prediction.total_fouls) ? (
+                            <div className="relative overflow-hidden rounded-xl">
+                              <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-md" />
+                              <div className="relative z-10 flex flex-col items-center justify-center py-4 text-center">
+                                <p className="text-xs text-slate-400 mb-1">Fouls</p>
+                                <Link
+                                  href="/subscribe"
+                                  className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#39FF14] to-[#00D4FF] text-[#020617] animate-pulse"
+                                >
+                                  🔒 Unlock
+                                </Link>
+                              </div>
+                            </div>
+                          ) : prediction.total_fouls ? (
+                            <div className="bg-slate-800/50 rounded-xl p-3 border border-[#39FF14]/20">
+                              <p className="text-xs text-slate-400">Fouls</p>
+                              <p className="text-lg font-black" style={{ color: '#39FF14' }}>
+                                {prediction.total_fouls}
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* Buteurs */}
+                        {isLocked(prediction.goalscorers) ? (
+                          <div className="relative overflow-hidden rounded-xl">
+                            <div className="absolute inset-0 bg-slate-800/50 backdrop-blur-md" />
+                            <div className="relative z-10 flex flex-col items-center justify-center py-4 text-center">
+                              <p className="text-xs text-slate-400 mb-1">⚽ Goalscorers</p>
+                              <Link
+                                href="/subscribe"
+                                className="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#39FF14] to-[#00D4FF] text-[#020617] animate-pulse"
+                              >
+                                🔒 Unlock VIP Tip — $79/mo
+                              </Link>
+                            </div>
+                          </div>
+                        ) : prediction.goalscorers && prediction.goalscorers.length > 0 ? (
+                          <div className="bg-slate-800/50 rounded-xl p-3 border border-[#39FF14]/20">
+                            <p className="text-xs text-slate-400 mb-2">⚽ Goalscorers</p>
+                            <div className="flex flex-wrap gap-2">
+                              {prediction.goalscorers.map((scorer, i) => (
+                                <span
+                                  key={i}
+                                  className="px-3 py-1 bg-[#39FF14]/10 text-[#39FF14] text-sm font-semibold rounded-full border border-[#39FF14]/30"
+                                >
+                                  {scorer}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+
+                    {/* Pas de pronostic */}
+                    {!prediction && (
+                      <div className="mt-4 text-center py-4">
+                        <p className="text-sm text-slate-500">
+                          No prediction available
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
