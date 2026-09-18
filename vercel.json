@@ -1,9 +1,0 @@
-{
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "cleanUrls": true,
-  "framework": null,
-  "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" }
-  }
-}
