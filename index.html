@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ProScore AI — Analyse Profonde & Pronostics</title>
+  <title>ProScore AI — Analyses Sportives Intelligentes</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -16,8 +16,8 @@
     body { font-family:'Inter',sans-serif; background:#020617; color:#f1f5f9; }
     .glass { background:rgba(15,23,42,0.7); backdrop-filter:blur(10px); border:1px solid rgba(30,41,59,0.7); border-radius:1rem; }
     .grad-text { background:linear-gradient(90deg,#39FF14,#00D4FF); -webkit-background-clip:text; color:transparent; }
-    .pw-toggle { position:absolute; right:12px; top:12px; cursor:pointer; font-size:1.2rem; }
-    .blurred-content { filter: blur(6px); user-select: none; pointer-events: none; }
+    .blurred { filter: blur(8px); user-select: none; pointer-events: none; }
+    .pw-toggle { position:absolute; right:12px; top:12px; cursor:pointer; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -25,115 +25,152 @@
   <!-- NAVBAR -->
   <nav class="border-b border-dark-800 bg-dark-900/90 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-2 font-black text-xl">
+      <a href="/" class="flex items-center gap-2 font-black text-xl">
         <span class="text-neon-green">ProScore</span> AI
-      </div>
-      <div class="flex items-center gap-3">
-        <button id="btnAdmin" onclick="toggleAdmin()" class="hidden px-4 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white shadow-lg shadow-purple-500/30">
-          👑 PANNEAU ADMIN
+      </a>
+      <div class="flex items-center gap-4">
+        <!-- Bouton Mes Alertes (Connecté) -->
+        <button id="btnAlerts" onclick="toggleAlerts()" class="hidden text-sm font-bold text-white hover:text-neon-blue flex items-center gap-2">
+          🔔 Mes Alertes
+        </button>
+        <!-- Bouton Admin -->
+        <button id="btnAdmin" onclick="toggleAdmin()" class="hidden px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white">
+          👑 ADMIN
         </button>
         <div id="authArea"></div>
       </div>
     </div>
   </nav>
 
-  <!-- BANDEAU ESSAI 3 JOURS -->
-  <div id="trialBanner" class="hidden bg-gradient-to-r from-amber-600 to-amber-800 text-white text-center py-2 text-sm font-bold shadow-lg">
-    ⏳ Votre période d'essai gratuit se termine dans <span id="trialDaysLeft"></span> jour(s). Profitez de toutes nos analyses IA !
-  </div>
-
-  <!-- HERO -->
-  <header class="py-12 text-center border-b border-dark-800 px-4">
-    <h1 class="text-4xl md:text-5xl font-black mb-4">L'Intelligence Artificielle au service de <br/><span class="grad-text">l'Analyse Sportive Profonde</span></h1>
-    <p class="text-slate-400 max-w-2xl mx-auto">Créez un compte gratuitement et profitez de 3 jours d'accès complet à nos analyses tactiques détaillées, nos probabilités de victoire et nos pronostics exclusifs.</p>
+  <!-- HERO (Ce qui captive le visiteur) -->
+  <header class="py-16 text-center px-4 relative overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-neon-blue/10 blur-[100px] rounded-full pointer-events-none"></div>
+    <h1 class="text-4xl md:text-6xl font-black mb-4 relative z-10">L'IA analyse <span class="grad-text">150+ Compétitions</span> mondiales</h1>
+    <p class="text-slate-400 max-w-2xl mx-auto relative z-10">Découvrez l'analyse tactique automatisée des 100 meilleures ligues de foot, 50 de basket, ATP/WTA et plus. <br/><b class="text-white">Créez vos alertes email ciblées sur vos équipes favorites.</b></p>
   </header>
 
-  <!-- PANNEAU ADMINISTRATEUR (Réservé à vous) -->
-  <section id="adminPanel" class="hidden max-w-7xl mx-auto px-4 py-8 bg-dark-800 border-b border-purple-500/30">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-black text-white">👑 Espace Administrateur</h2>
-      <button onclick="toggleAdmin()" class="text-slate-400 hover:text-white">Fermer ✕</button>
-    </div>
+  <!-- MODULE DE FILTRAGE (Pays -> Ligue) -->
+  <div class="max-w-7xl mx-auto px-4 mb-8 flex flex-wrap gap-4 items-center justify-center relative z-10">
+    <select id="filterSport" onchange="loadMatches()" class="bg-dark-800 border border-dark-700 text-white px-4 py-2 rounded-lg font-bold">
+      <option value="all">🏆 Tous les sports</option>
+      <option value="football">⚽ Football (Top 100)</option>
+      <option value="basketball">🏀 Basketball (Top 50)</option>
+      <option value="tennis">🎾 Tennis</option>
+      <option value="hockey">🏒 Hockey sur glace</option>
+      <option value="american_football">🏈 Foot US</option>
+    </select>
+    <select id="filterCountry" onchange="loadMatches()" class="bg-dark-800 border border-dark-700 text-white px-4 py-2 rounded-lg">
+      <option value="all">🌍 Tous les pays</option>
+      <option value="Europe">🇪🇺 Compétitions Européennes</option>
+      <option value="England">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Angleterre</option>
+      <option value="Spain">🇪🇸 Espagne</option>
+      <option value="USA">🇺🇸 USA</option>
+      <!-- Rempli dynamiquement -->
+    </select>
+  </div>
 
-    <div class="grid lg:grid-cols-2 gap-8">
-      <!-- Formulaire: Injecter une analyse -->
-      <div class="glass p-6 border-purple-500/30">
-        <h3 class="font-bold text-lg text-purple-400 mb-4">📝 Injecter une Nouvelle Analyse IA</h3>
-        <form onsubmit="injectMatch(event)" class="space-y-3 text-sm">
-          <div class="grid grid-cols-2 gap-2">
-            <input id="inSport" placeholder="Sport (ex: football)" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-            <input id="inLeague" placeholder="Ligue (ex: Premier League)" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <input id="inHome" placeholder="Équipe Domicile" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-            <input id="inAway" placeholder="Équipe Extérieur" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-          </div>
-          <input type="datetime-local" id="inDate" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-          
-          <hr class="border-dark-700 my-4"/>
-          <h4 class="font-bold text-white">Données du Pronostic</h4>
-          <div class="grid grid-cols-3 gap-2">
-            <input id="in1X2" placeholder="1X2" class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-            <input id="inScore" placeholder="Score Exact" class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-            <input type="number" id="inProb" placeholder="Probabilité %" class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-          </div>
-          
-          <h4 class="font-bold text-white mt-2">Analyse Détaillée (Texte)</h4>
-          <input id="inPlayer" placeholder="Joueur clé à suivre" class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"/>
-          <textarea id="inTactics" placeholder="Confrontation tactique (ex: Le bloc bas de l'équipe A face à l'attaque rapide de B...)" rows="2" class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"></textarea>
-          <textarea id="inAnalysis" placeholder="Analyse profonde de l'IA (état de forme, blessures, contexte...)" rows="3" required class="p-3 bg-dark-900 rounded-lg border border-dark-700 w-full text-white"></textarea>
-          
-          <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold text-white">Publier l'Analyse</button>
-        </form>
-      </div>
-
-      <!-- Gestion des utilisateurs -->
-      <div class="glass p-6 border-purple-500/30">
-        <h3 class="font-bold text-lg text-purple-400 mb-4">👥 Base Utilisateurs & Abonnements</h3>
-        <div class="flex justify-between items-center mb-4">
-          <p class="text-sm text-slate-400">Total : <span id="adminTotalUsers" class="text-white font-bold">0</span> inscrits</p>
-          <button onclick="loadAdminUsers()" class="text-xs bg-dark-700 px-3 py-1 rounded">Actualiser</button>
-        </div>
-        <div id="adminUserList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-          <!-- Liste injectée ici -->
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FLUX DES MATCHS -->
-  <main class="max-w-7xl mx-auto px-4 py-12">
-    <h2 class="text-2xl font-black mb-6 border-l-4 border-neon-green pl-3">Dernières Analyses IA</h2>
+  <!-- FLUX DES ANALYSES IA -->
+  <main class="max-w-7xl mx-auto px-4 pb-12">
     <div id="matchesBox" class="space-y-8">
-      <div class="text-center py-10 text-slate-500">Chargement des analyses...</div>
+      <div class="text-center py-10 text-slate-500">Recherche des analyses IA en cours...</div>
     </div>
   </main>
 
+  <!-- MODAL MES ALERTES (Abonnés) -->
+  <div id="alertsPanel" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+      <button onclick="toggleAlerts()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">✕</button>
+      <h2 class="text-2xl font-black text-white mb-2">🔔 Mes Alertes d'Équipes</h2>
+      <p class="text-sm text-slate-400 mb-6">Recevez un email d'analyse IA dès qu'une de vos équipes joue. (Limite: <span id="maxTeamsLimit" class="text-neon-green font-bold">50</span> équipes par alerte).</p>
+      
+      <form onsubmit="createAlert(event)" class="bg-dark-900 p-4 rounded-xl border border-dark-700 mb-6">
+        <input type="text" id="alertName" required placeholder="Nom de l'alerte (ex: Mes clubs favoris)" class="w-full p-3 bg-dark-800 rounded-lg text-white mb-3 border border-dark-700">
+        <textarea id="alertTeams" required rows="3" placeholder="Entrez les noms des équipes, séparés par des virgules (Max 50). Ex: Real Madrid, Lakers, PSG..." class="w-full p-3 bg-dark-800 rounded-lg text-white mb-3 border border-dark-700"></textarea>
+        <label class="flex items-center gap-2 text-sm text-white mb-4">
+          <input type="checkbox" id="alertEmail" checked class="w-4 h-4 accent-neon-green"> M'envoyer un email dès qu'une analyse est prête
+        </label>
+        <button type="submit" class="w-full py-3 bg-neon-green text-dark-900 font-bold rounded-lg">Créer l'Alerte Tracker IA</button>
+      </form>
+
+      <h3 class="font-bold text-white mb-3">Vos Trackers Actifs</h3>
+      <div id="userAlertsList" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- PANNEAU ADMINISTRATEUR (Vous) -->
+  <div id="adminPanel" class="hidden fixed inset-0 z-50 bg-black/90 flex justify-center p-4 overflow-y-auto">
+    <div class="glass p-6 w-full max-w-5xl my-auto">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-black text-purple-400">👑 Centre de Contrôle Admin</h2>
+        <button onclick="toggleAdmin()" class="text-white text-xl">✕</button>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- 1. Paramètres du site -->
+        <div class="bg-dark-900 p-5 rounded-xl border border-purple-500/30">
+          <h3 class="font-bold text-white mb-4">⚙️ Paramètres de l'Application</h3>
+          <form onsubmit="updateSettings(event)" class="space-y-3 text-sm">
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-slate-400">Prix Silver ($)</label>
+                <input type="number" id="setSilver" class="w-full p-2 bg-dark-800 rounded text-white mt-1">
+              </div>
+              <div>
+                <label class="text-slate-400">Prix Gold ($)</label>
+                <input type="number" id="setGold" class="w-full p-2 bg-dark-800 rounded text-white mt-1">
+              </div>
+              <div>
+                <label class="text-slate-400">Prix VIP ($)</label>
+                <input type="number" id="setVip" class="w-full p-2 bg-dark-800 rounded text-white mt-1">
+              </div>
+            </div>
+            <div>
+              <label class="text-slate-400">Max Équipes / Alerte</label>
+              <input type="number" id="setMaxTeams" class="w-full p-2 bg-dark-800 rounded text-white mt-1">
+            </div>
+            <button type="submit" class="w-full py-2 bg-purple-600 text-white font-bold rounded">Sauvegarder les Paramètres</button>
+          </form>
+        </div>
+
+        <!-- 2. Gestion des utilisateurs -->
+        <div class="bg-dark-900 p-5 rounded-xl border border-purple-500/30">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-bold text-white">👥 Utilisateurs (<span id="adminTotalUsers">0</span>)</h3>
+            <button onclick="loadAdminData()" class="text-xs bg-dark-700 px-2 py-1 rounded">Actualiser</button>
+          </div>
+          <div id="adminUserList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2 text-sm">
+            <!-- Liste injectée via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- AUTH MODAL -->
-  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
     <div class="glass p-8 w-full max-w-md relative">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 text-2xl">×</button>
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 text-xl">✕</button>
       <h3 id="authTitle" class="text-2xl font-black text-white mb-6 text-center">Connexion</h3>
-      <div id="authErr" class="hidden p-3 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-sm mb-4"></div>
+      <div id="authErr" class="hidden p-3 bg-red-900/30 text-red-400 text-sm mb-4 rounded-lg"></div>
       
       <form onsubmit="handleAuth(event)" class="space-y-4">
-        <input type="email" id="authEmail" required placeholder="Votre adresse e-mail" class="w-full p-4 bg-dark-900 border border-dark-700 rounded-xl text-white" />
-        <div class="pw-wrap">
-          <input type="password" id="authPw" required placeholder="Votre mot de passe" class="w-full p-4 bg-dark-900 border border-dark-700 rounded-xl text-white" />
+        <input type="email" id="authEmail" required placeholder="Email" class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg text-white" />
+        <div class="relative">
+          <input type="password" id="authPw" required placeholder="Mot de passe" class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg text-white" />
           <span class="pw-toggle" onclick="toggleEye('authPw')">👁️</span>
         </div>
-        <button type="submit" id="authBtn" class="w-full py-4 bg-neon-green text-dark-900 font-black rounded-xl hover:bg-green-400">Se connecter</button>
+        <button type="submit" id="authBtn" class="w-full py-3 bg-neon-green text-dark-900 font-black rounded-lg">Se connecter</button>
       </form>
-      <p class="text-center text-sm text-slate-400 mt-6">
-        <span id="switchTxt">Pas encore inscrit ?</span>
-        <button onclick="flipMode()" class="text-white font-bold hover:underline ml-1" id="switchBtn">Créer un compte (3 jours gratuits)</button>
+      <p class="text-center text-sm text-slate-400 mt-4">
+        <span id="switchTxt">Nouveau ?</span>
+        <button onclick="flipMode()" class="text-white hover:underline ml-1" id="switchBtn">Créer un compte</button>
       </p>
     </div>
   </div>
 
   <script>
     // =============================================
-    // ⚠️ CONFIGURATION SUPABASE (À REMPLIR)
+    // ⚠️ CONFIGURATION SUPABASE (REMPLACEZ ICI)
     // =============================================
     const SUPABASE_URL = 'https://obkqpaiqccreoinxgodo.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ia3FwYWlxY2NyZW9pbnhnb2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDExMDksImV4cCI6MjEwNTA3NzEwOX0.iGabaA_ylID4S8CqeC1gpdjs9Px3R3ixauwQOOfmejg';
@@ -141,53 +178,41 @@
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Variables globales
+    // ETAT GLOBAL
     let user = null;
     let profile = null;
-    let hasAccess = false; // Vrai si (Admin) OU (Abonné) OU (Essai Actif)
+    let appSettings = { price_silver: 19, price_gold: 39, price_vip: 79, max_teams_per_alert: 50 };
+    let hasAccess = false;
     let mode = 'login';
 
     // =============================================
-    // LOGIQUE D'ESSAI 3 JOURS ET ACCÈS
+    // INITIALISATION & AUTHENTIFICATION
     // =============================================
-    function checkAccess() {
-      if (!user || !profile) {
-        hasAccess = false;
-        document.getElementById('trialBanner').classList.add('hidden');
-        return;
-      }
+    document.addEventListener('DOMContentLoaded', async () => {
+      await fetchSettings();
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.user) { user = session.user; await loadProfile(); }
+      renderUI();
+      loadMatches();
+    });
 
-      // Si c'est l'admin ou un abonné manuel, accès total
-      if (profile.role === 'admin' || profile.role === 'subscriber') {
-        hasAccess = true;
-        document.getElementById('trialBanner').classList.add('hidden');
-        
-        if (profile.role === 'admin') {
-          document.getElementById('btnAdmin').classList.remove('hidden');
-        }
-        return;
-      }
-
-      // Calcul des 3 jours d'essai pour le rôle 'free'
-      const start = new Date(profile.trial_start);
-      const now = new Date();
-      const diffMs = now - start;
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      const daysLeft = Math.ceil(3 - diffDays);
-
-      if (daysLeft > 0) {
-        hasAccess = true;
-        document.getElementById('trialBanner').classList.remove('hidden');
-        document.getElementById('trialDaysLeft').innerText = daysLeft;
-      } else {
-        hasAccess = false;
-        document.getElementById('trialBanner').classList.add('hidden');
+    async function fetchSettings() {
+      const { data } = await db.from('app_settings').select('*').eq('id', 1).single();
+      if (data) {
+        appSettings = data;
+        document.getElementById('maxTeamsLimit').innerText = data.max_teams_per_alert;
       }
     }
 
-    // =============================================
-    // AUTHENTIFICATION
-    // =============================================
+    function checkAccess() {
+      if (!user || !profile) return hasAccess = false;
+      if (profile.role === 'admin' || profile.role === 'subscriber') return hasAccess = true;
+      
+      const start = new Date(profile.trial_start || new Date());
+      const days = (new Date() - start) / (1000 * 60 * 60 * 24);
+      hasAccess = days <= 3; // 3 jours d'essai
+    }
+
     function toggleEye(id) {
       const inp = document.getElementById(id);
       inp.type = inp.type === 'password' ? 'text' : 'password';
@@ -196,12 +221,11 @@
     function openModal(m) {
       mode = m;
       document.getElementById('authModal').classList.remove('hidden');
-      document.getElementById('authTitle').innerText = m === 'login' ? 'Connexion' : 'Essai 3 Jours Gratuit';
-      document.getElementById('authBtn').innerText = m === 'login' ? 'Se connecter' : 'Commencer l\'essai';
-      document.getElementById('switchTxt').innerText = m === 'login' ? 'Nouveau ici ?' : 'Déjà inscrit ?';
-      document.getElementById('switchBtn').innerText = m === 'login' ? "Créer un compte" : 'Se connecter';
+      document.getElementById('authTitle').innerText = m === 'login' ? 'Connexion' : 'Rejoindre ProScore AI';
+      document.getElementById('authBtn').innerText = m === 'login' ? 'Se connecter' : 'Commencer l\'essai (3 jours)';
+      document.getElementById('switchTxt').innerText = m === 'login' ? 'Pas de compte ?' : 'Déjà inscrit ?';
+      document.getElementById('switchBtn').innerText = m === 'login' ? "S'inscrire" : 'Se connecter';
     }
-
     function closeModal() { document.getElementById('authModal').classList.add('hidden'); }
     function flipMode() { openModal(mode === 'login' ? 'register' : 'login'); }
 
@@ -216,18 +240,9 @@
         if (mode === 'register') {
           const { data, error } = await db.auth.signUp({ email, password });
           if (error) throw error;
-          
-          if (data.user) {
-            // Création du profil avec la date d'aujourd'hui pour l'essai
-            await db.from('users').upsert({ 
-              id: data.user.id, 
-              email: email, 
-              role: 'free', 
-              trial_start: new Date().toISOString() 
-            });
-          }
-          alert('✅ Compte créé ! Vos 3 jours d\'essai commencent maintenant.');
+          if (data.user) await db.from('users').upsert({ id: data.user.id, email: email, role: 'free', trial_start: new Date().toISOString() });
           user = data.user;
+          alert('Bienvenue ! Votre essai de 3 jours commence.');
         } else {
           const { data, error } = await db.auth.signInWithPassword({ email, password });
           if (error) throw error;
@@ -236,8 +251,7 @@
         await loadProfile();
         closeModal();
       } catch (err) {
-        errEl.innerText = err.message;
-        errEl.classList.remove('hidden');
+        errEl.innerText = err.message; errEl.classList.remove('hidden');
       }
     }
 
@@ -247,231 +261,206 @@
       profile = data;
       checkAccess();
       renderUI();
-      loadMatches(); // Recharger les matchs avec les droits mis à jour
+      loadMatches();
     }
 
     async function logout() {
       await db.auth.signOut();
-      user = null; profile = null;
-      document.getElementById('btnAdmin').classList.add('hidden');
-      document.getElementById('adminPanel').classList.add('hidden');
-      checkAccess();
-      renderUI();
-      loadMatches();
+      user = null; profile = null; hasAccess = false;
+      renderUI(); loadMatches();
     }
 
     function renderUI() {
       const a = document.getElementById('authArea');
+      document.getElementById('btnAdmin').classList.add('hidden');
+      document.getElementById('btnAlerts').classList.add('hidden');
+
       if (user) {
-        a.innerHTML = `<span class="text-sm font-bold text-white mr-3">${user.email}</span>
-                       <button onclick="logout()" class="text-sm text-slate-400 hover:text-white">Déconnexion</button>`;
+        a.innerHTML = `<span class="text-sm font-bold text-slate-300 mr-4">${user.email}</span><button onclick="logout()" class="text-sm text-red-400">Déconnexion</button>`;
+        document.getElementById('btnAlerts').classList.remove('hidden');
+        if (profile?.role === 'admin') document.getElementById('btnAdmin').classList.remove('hidden');
       } else {
-        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-white font-bold mr-4">Connexion</button>
-                       <button onclick="openModal('register')" class="px-4 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-sm">Essai Gratuit</button>`;
+        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-white font-bold mr-4">Connexion</button><button onclick="openModal('register')" class="px-4 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-sm">Essai Gratuit</button>`;
       }
     }
 
     // =============================================
-    // AFFICHAGE DES MATCHS ET DES ANALYSES
+    // SYSTÈME D'ALERTES ÉQUIPES (VISITEUR)
+    // =============================================
+    function toggleAlerts() {
+      const panel = document.getElementById('alertsPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) loadUserAlerts();
+    }
+
+    async function loadUserAlerts() {
+      const { data } = await db.from('user_alerts').select('*').eq('user_id', user.id);
+      const list = document.getElementById('userAlertsList');
+      if (!data || data.length === 0) { list.innerHTML = '<p class="text-sm text-slate-500">Aucune alerte créée.</p>'; return; }
+      
+      list.innerHTML = data.map(a => `
+        <div class="bg-dark-800 p-3 rounded-lg border border-dark-700 flex justify-between items-center">
+          <div>
+            <h4 class="font-bold text-white">${a.alert_name}</h4>
+            <p class="text-xs text-slate-400">${JSON.parse(a.teams).length} équipes suivies</p>
+          </div>
+          <button onclick="deleteAlert('${a.id}')" class="text-red-400 text-xs font-bold">Supprimer</button>
+        </div>
+      `).join('');
+    }
+
+    async function createAlert(e) {
+      e.preventDefault();
+      const name = document.getElementById('alertName').value;
+      const teamsStr = document.getElementById('alertTeams').value;
+      const email = document.getElementById('alertEmail').checked;
+      
+      const teamsArr = teamsStr.split(',').map(t => t.trim()).filter(t => t);
+      if (teamsArr.length > appSettings.max_teams_per_alert) {
+        alert(`Vous avez entré ${teamsArr.length} équipes. La limite est de ${appSettings.max_teams_per_alert}.`);
+        return;
+      }
+
+      await db.from('user_alerts').insert([{ user_id: user.id, alert_name: name, teams: JSON.stringify(teamsArr), send_email: email }]);
+      e.target.reset();
+      loadUserAlerts();
+    }
+
+    async function deleteAlert(id) {
+      await db.from('user_alerts').delete().eq('id', id);
+      loadUserAlerts();
+    }
+
+    // =============================================
+    // AFFICHAGE DES MATCHS ET ANALYSES CAPTIVANTES
     // =============================================
     async function loadMatches() {
       const box = document.getElementById('matchesBox');
+      const sportF = document.getElementById('filterSport').value;
+      const countryF = document.getElementById('filterCountry').value;
+
       try {
-        const { data, error } = await db.from('matches').select('*, predictions(*)').order('match_date', { ascending: false });
-        if (error) throw error;
+        let q = db.from('matches').select('*, predictions(*)').order('match_date', { ascending: false });
+        if (sportF !== 'all') q = q.eq('sport', sportF);
+        if (countryF !== 'all') q = q.eq('country', countryF);
+        
+        const { data } = await q;
 
         if (!data || data.length === 0) {
-          box.innerHTML = '<p class="text-center text-slate-500 py-10">Aucune analyse IA disponible pour le moment.</p>';
+          box.innerHTML = '<p class="text-center text-slate-500 py-10">L\'IA analyse actuellement les prochaines rencontres...</p>';
           return;
         }
 
         box.innerHTML = data.map(m => {
           const p = m.predictions?.[0];
-          const time = new Date(m.match_date).toLocaleString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-          
-          if (!p) return ''; // Ne pas afficher si pas de pronostic
+          if (!p) return ''; 
 
-          // Le HTML complet de la carte
           return `
             <div class="glass p-6 md:p-8 rounded-2xl relative overflow-hidden">
-              <div class="flex justify-between items-start mb-6">
+              <div class="flex justify-between items-start mb-6 border-b border-dark-700 pb-4">
                 <div>
-                  <span class="text-xs font-black tracking-widest text-slate-500 uppercase">${m.sport} · ${m.league_name}</span>
-                  <h3 class="text-xl md:text-3xl font-black text-white mt-1">${m.team_home} - ${m.team_away}</h3>
-                  <p class="text-sm text-slate-400 mt-1">🕒 ${time}</p>
+                  <span class="text-xs font-black tracking-widest text-slate-400 uppercase">${m.country || 'International'} · ${m.league_name}</span>
+                  <h3 class="text-2xl font-black text-white mt-1">${m.team_home} vs ${m.team_away}</h3>
                 </div>
-                <div class="text-right">
-                  <div class="inline-block bg-dark-900 border border-dark-700 rounded-lg p-3 text-center">
-                    <p class="text-xs text-slate-400 font-bold">Probabilité IA</p>
-                    <p class="text-2xl font-black text-neon-green">${p.win_probability}%</p>
-                  </div>
+                <div class="text-right bg-dark-900 border border-dark-700 rounded-lg p-2 px-4">
+                  <p class="text-[10px] text-slate-400 font-bold uppercase">Algorithme IA</p>
+                  <p class="text-xl font-black text-neon-green">${p.win_probability || 80}%</p>
                 </div>
               </div>
 
-              ${!hasAccess ? `
-                <!-- PAYWALL : Si pas d'accès (Essai terminé) -->
-                <div class="relative rounded-xl border border-dark-700 bg-dark-900 p-6 overflow-hidden">
-                  <div class="blurred-content opacity-30">
-                    <p class="mb-2"><strong>Analyse IA :</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                    <p><strong>Clé tactique :</strong> Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+              <!-- L'ANALYSE (Visible pour accrocher le visiteur) -->
+              <div class="mb-6">
+                <h4 class="font-bold text-white mb-2 flex items-center gap-2">🧠 Rapport de l'Intelligence Artificielle</h4>
+                <p class="text-sm text-slate-300 leading-relaxed italic border-l-2 border-neon-blue pl-3">
+                  "${p.ai_context || 'Analyse des dynamiques offensives et défensives basée sur les 20 derniers matchs...'}"
+                </p>
+                ${p.ai_tactical ? `<p class="text-sm text-slate-400 mt-2"><b>Clé tactique :</b> ${p.ai_tactical}</p>` : ''}
+              </div>
+
+              <!-- LE PRONOSTIC FINAL (Caché si pas d'accès) -->
+              ${hasAccess ? `
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="bg-dark-900 p-4 rounded-xl border border-neon-green/30">
+                    <p class="text-xs text-slate-500 font-bold uppercase">Pronostic IA Sécurisé (1X2)</p>
+                    <p class="text-2xl font-black text-white">${p.final_result || 'N/A'}</p>
                   </div>
-                  <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-dark-900/60">
-                    <p class="text-3xl mb-2">🔒</p>
-                    <h4 class="text-lg font-bold text-white mb-2">Période d'essai terminée</h4>
-                    <p class="text-sm text-slate-300 mb-4">L'accès à nos analyses profondes nécessite un abonnement actif.</p>
-                    <button class="px-6 py-2 bg-white text-black font-bold rounded-lg" onclick="alert('Lien vers page de paiement ou contactez l\\'administrateur')">Voir les abonnements</button>
+                  <div class="bg-dark-900 p-4 rounded-xl border border-neon-blue/30">
+                    <p class="text-xs text-slate-500 font-bold uppercase">Score Exact Projeté</p>
+                    <p class="text-2xl font-black text-neon-blue">${p.exact_score || 'N/A'}</p>
                   </div>
                 </div>
               ` : `
-                <!-- CONTENU DÉBLOQUÉ : Analyse Profonde -->
-                <div class="grid md:grid-cols-3 gap-4 mb-6">
-                  <div class="bg-dark-900 p-4 rounded-xl border border-dark-700">
-                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Prédiction 1X2</p>
-                    <p class="text-lg font-black text-white">${p.final_result || 'N/A'}</p>
+                <div class="relative rounded-xl border border-dark-700 bg-dark-900 p-6 overflow-hidden mt-4">
+                  <div class="blurred flex gap-4">
+                    <div class="flex-1 bg-dark-800 p-4 rounded"><p class="text-2xl font-black text-white">1</p></div>
+                    <div class="flex-1 bg-dark-800 p-4 rounded"><p class="text-2xl font-black text-neon-blue">2-1</p></div>
                   </div>
-                  <div class="bg-dark-900 p-4 rounded-xl border border-dark-700">
-                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Score Exact (IA)</p>
-                    <p class="text-lg font-black text-neon-blue">${p.exact_score || 'N/A'}</p>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-dark-900/70">
+                    <p class="text-2xl mb-2">🔒</p>
+                    <h4 class="text-base font-bold text-white mb-1">Conclusion de l'IA Verrouillée</h4>
+                    <p class="text-xs text-slate-300 mb-3">Créez un compte pour voir le pronostic (3 jours offerts).</p>
+                    <button onclick="openModal('register')" class="px-5 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-sm">Débloquer le Pronostic</button>
                   </div>
-                  <div class="bg-dark-900 p-4 rounded-xl border border-dark-700">
-                    <p class="text-xs text-slate-500 font-bold uppercase mb-1">Joueur Clé</p>
-                    <p class="text-lg font-black text-white">${p.key_player || 'N/A'}</p>
-                  </div>
-                </div>
-
-                <div class="space-y-4 text-sm text-slate-300 leading-relaxed bg-dark-800/50 p-5 rounded-xl border border-dark-700">
-                  <div>
-                    <h4 class="font-bold text-white mb-1 flex items-center gap-2">🧠 Analyse Détaillée de l'IA</h4>
-                    <p>${p.deep_analysis || 'Aucune analyse textuelle fournie.'}</p>
-                  </div>
-                  ${p.tactical_matchup ? `
-                  <div class="pt-3 border-t border-dark-700">
-                    <h4 class="font-bold text-white mb-1 flex items-center gap-2">♟️ Confrontation Tactique</h4>
-                    <p>${p.tactical_matchup}</p>
-                  </div>` : ''}
                 </div>
               `}
             </div>
           `;
         }).join('');
-
-      } catch (err) {
-        box.innerHTML = `<p class="text-red-400 text-center py-4">Erreur : ${err.message}</p>`;
-      }
+      } catch (e) { console.error(e); }
     }
 
     // =============================================
-    // ESPACE ADMINISTRATEUR
+    // PANNEAU ADMINISTRATEUR
     // =============================================
     function toggleAdmin() {
-      document.getElementById('adminPanel').classList.toggle('hidden');
-      if (!document.getElementById('adminPanel').classList.contains('hidden')) {
-        loadAdminUsers();
-      }
+      const panel = document.getElementById('adminPanel');
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) loadAdminData();
     }
 
-    // 1. Injecter un match et son analyse
-    async function injectMatch(e) {
+    async function loadAdminData() {
+      // 1. Charger Settings
+      document.getElementById('setSilver').value = appSettings.price_silver;
+      document.getElementById('setGold').value = appSettings.price_gold;
+      document.getElementById('setVip').value = appSettings.price_vip;
+      document.getElementById('setMaxTeams').value = appSettings.max_teams_per_alert;
+
+      // 2. Charger Users
+      const { data } = await db.from('users').select('*').order('created_at', { ascending: false });
+      document.getElementById('adminTotalUsers').innerText = data.length;
+      
+      document.getElementById('adminUserList').innerHTML = data.map(u => {
+        let role = u.role === 'admin' ? '<span class="text-purple-400 font-bold">Admin</span>' : 
+                   u.role === 'subscriber' ? '<span class="text-neon-green font-bold">Abonné</span>' :
+                   `<span class="text-amber-400">Gratuit</span>`;
+        return `
+          <div class="flex justify-between items-center p-3 bg-dark-800 rounded border border-dark-700">
+            <div><p class="font-bold text-white">${u.email}</p><p class="text-xs">${role}</p></div>
+            ${u.role !== 'admin' ? `<button onclick="grantSub('${u.id}')" class="px-2 py-1 bg-neon-green/20 text-neon-green rounded text-xs">+ Offrir Abonnement</button>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateSettings(e) {
       e.preventDefault();
-      try {
-        // Créer le match
-        const { data: m, error: err1 } = await db.from('matches').insert([{
-          sport: document.getElementById('inSport').value,
-          league_name: document.getElementById('inLeague').value,
-          team_home: document.getElementById('inHome').value,
-          team_away: document.getElementById('inAway').value,
-          match_date: new Date(document.getElementById('inDate').value).toISOString(),
-        }]).select().single();
-        if (err1) throw err1;
-
-        // Créer la prédiction détaillée
-        const { error: err2 } = await db.from('predictions').insert([{
-          match_id: m.id,
-          final_result: document.getElementById('in1X2').value || null,
-          exact_score: document.getElementById('inScore').value || null,
-          win_probability: parseInt(document.getElementById('inProb').value) || 50,
-          key_player: document.getElementById('inPlayer').value || null,
-          tactical_matchup: document.getElementById('inTactics').value || null,
-          deep_analysis: document.getElementById('inAnalysis').value || null,
-        }]);
-        if (err2) throw err2;
-
-        alert('✅ Analyse IA publiée avec succès !');
-        e.target.reset();
-        loadMatches();
-      } catch (err) {
-        alert('Erreur: ' + err.message);
-      }
+      const updates = {
+        price_silver: document.getElementById('setSilver').value,
+        price_gold: document.getElementById('setGold').value,
+        price_vip: document.getElementById('setVip').value,
+        max_teams_per_alert: document.getElementById('setMaxTeams').value,
+      };
+      await db.from('app_settings').update(updates).eq('id', 1);
+      alert('Paramètres mis à jour !');
+      fetchSettings();
     }
 
-    // 2. Charger les utilisateurs
-    async function loadAdminUsers() {
-      const list = document.getElementById('adminUserList');
-      list.innerHTML = '<p class="text-slate-500">Chargement...</p>';
-      try {
-        const { data, error } = await db.from('users').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        
-        document.getElementById('adminTotalUsers').innerText = data.length;
-
-        list.innerHTML = data.map(u => {
-          let statusHtml = '';
-          const trialDate = new Date(u.trial_start);
-          const diffDays = (new Date() - trialDate) / (1000 * 60 * 60 * 24);
-          const trialLeft = Math.max(0, Math.ceil(3 - diffDays));
-
-          if (u.role === 'admin') statusHtml = '<span class="text-purple-400 font-bold">Admin</span>';
-          else if (u.role === 'subscriber') statusHtml = `<span class="text-neon-green font-bold">Abonné (jusqu'au ${new Date(u.sub_expires_at).toLocaleDateString()})</span>`;
-          else if (trialLeft > 0) statusHtml = `<span class="text-amber-400">Essai : ${trialLeft}j restants</span>`;
-          else statusHtml = '<span class="text-red-400">Essai expiré</span>';
-
-          return `
-            <div class="p-4 bg-dark-900 rounded-lg border border-dark-700 flex justify-between items-center">
-              <div>
-                <p class="font-bold text-white">${u.email}</p>
-                <p class="text-xs">${statusHtml}</p>
-              </div>
-              ${u.role !== 'admin' ? `
-                <button onclick="grantSubscription('${u.id}')" class="px-3 py-1.5 bg-neon-green/20 hover:bg-neon-green/40 text-neon-green font-bold text-xs rounded border border-neon-green/30">
-                  + Offrir 30 Jours
-                </button>
-              ` : ''}
-            </div>
-          `;
-        }).join('');
-      } catch (err) {
-        list.innerHTML = `<p class="text-red-400">Erreur : ${err.message}</p>`;
+    async function grantSub(uid) {
+      if(confirm('Passer cet utilisateur en Abonné Premium ?')) {
+        await db.from('users').update({ role: 'subscriber' }).eq('id', uid);
+        loadAdminData();
       }
     }
-
-    // 3. Offrir un abonnement manuellement
-    async function grantSubscription(userId) {
-      if (!confirm("Voulez-vous offrir 30 jours d'accès premium à cet utilisateur ?")) return;
-      try {
-        // Date dans 30 jours
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30);
-
-        const { error } = await db.from('users').update({
-          role: 'subscriber',
-          sub_expires_at: expires.toISOString()
-        }).eq('id', userId);
-
-        if (error) throw error;
-        alert('✅ Abonnement accordé avec succès !');
-        loadAdminUsers(); // Rafraichir la liste
-      } catch (err) {
-        alert('Erreur: ' + err.message);
-      }
-    }
-
-    // Initialisation
-    document.addEventListener('DOMContentLoaded', async () => {
-      const { data: { session } } = await db.auth.getSession();
-      if (session?.user) { user = session.user; await loadProfile(); }
-      renderUI();
-      loadMatches();
-    });
   </script>
 </body>
 </html>
