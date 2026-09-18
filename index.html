@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ProScore AI — Premium Sports Predictions</title>
-  <meta name="description" content="AI-powered sports predictions — 100+ football leagues, NBA, ATP/WTA, NHL, NFL." />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -13,15 +12,7 @@
         extend: {
           colors: {
             dark: { 600:'#334155', 700:'#1e293b', 800:'#0f172a', 900:'#020617', 950:'#010309' },
-            neon: { green:'#39FF14', blue:'#00D4FF' },
-          },
-          animation: {
-            'pulse-neon': 'pulseNeon 2s ease-in-out infinite',
-            'slide-up': 'slideUp 0.3s ease-out',
-          },
-          keyframes: {
-            pulseNeon: { '0%,100%':{opacity:'1'}, '50%':{opacity:'0.6'} },
-            slideUp: { '0%':{transform:'translateY(10px)',opacity:'0'}, '100%':{transform:'translateY(0)',opacity:'1'} },
+            neon: { green:'#39FF14', blue:'#00D4FF', purple:'#BF40BF' },
           },
         },
       },
@@ -31,221 +22,126 @@
   <style>
     body { font-family:'Inter',system-ui,sans-serif; }
     .glass { background:rgba(15,23,42,0.6); backdrop-filter:blur(12px); border:1px solid rgba(30,41,59,0.5); border-radius:1rem; }
-    .neon { color:#39FF14; text-shadow:0 0 10px rgba(57,255,20,0.5),0 0 20px rgba(57,255,20,0.3); }
+    .neon { color:#39FF14; text-shadow:0 0 10px rgba(57,255,20,0.5); }
     .grad { background:linear-gradient(90deg,#39FF14,#00D4FF); -webkit-background-clip:text; background-clip:text; color:transparent; }
-    ::-webkit-scrollbar { width:6px; height:6px; }
-    ::-webkit-scrollbar-track { background:#020617; }
-    ::-webkit-scrollbar-thumb { background:#334155; border-radius:9999px; }
-
-    /* === Icône œil mot de passe === */
     .pw-wrap { position:relative; }
-    .pw-toggle {
-      position:absolute; right:12px; top:50%; transform:translateY(-50%);
-      cursor:pointer; color:#64748b; transition:color 0.2s;
-      background:none; border:none; padding:4px;
-      display:flex; align-items:center; justify-content:center;
-    }
+    .pw-toggle { position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#64748b; background:none; border:none; }
     .pw-toggle:hover { color:#39FF14; }
-    .pw-toggle svg { width:20px; height:20px; }
   </style>
 </head>
 
 <body class="bg-dark-900 text-slate-100 min-h-screen">
 
-  <!-- ========== NAVBAR ========== -->
+  <!-- NAVBAR -->
   <nav class="sticky top-0 z-50 border-b border-dark-800 bg-dark-900/80 backdrop-blur-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+    <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
       <a href="/" class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-gradient-to-br from-neon-green to-neon-blue rounded-lg flex items-center justify-center">
-          <span class="text-dark-900 font-black text-sm">PS</span>
-        </div>
+        <div class="w-8 h-8 bg-gradient-to-br from-neon-green to-neon-blue rounded-lg flex items-center justify-center font-black text-dark-900">PS</div>
         <span class="text-xl font-black text-white">Pro<span class="text-neon-green">Score</span></span>
       </a>
       <div class="flex items-center gap-3">
-        <select id="langSel" class="bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-sm text-slate-200 cursor-pointer">
-          <option value="fr">🇫🇷 FR</option>
-          <option value="en">🇬🇧 EN</option>
-          <option value="es">🇪🇸 ES</option>
-          <option value="ar">🇸🇦 AR</option>
-        </select>
+        <div id="adminNavBtn" class="hidden">
+          <button onclick="toggleAdminPanel()" class="px-3 py-1.5 bg-neon-purple/20 border border-neon-purple/50 rounded-xl text-xs font-bold text-neon-purple hover:bg-neon-purple/30">
+            ⚙️ Panneau Admin
+          </button>
+        </div>
         <div id="authArea" class="flex items-center gap-2"></div>
       </div>
     </div>
   </nav>
 
-  <!-- ========== HERO ========== -->
-  <section class="relative overflow-hidden py-16 lg:py-24">
-    <div class="absolute inset-0 bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800"></div>
-    <div class="absolute top-20 left-10 w-72 h-72 bg-neon-green/10 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-20 right-10 w-96 h-96 bg-neon-blue/5 rounded-full blur-3xl"></div>
-    <div class="relative max-w-7xl mx-auto px-4 text-center">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-6 border border-neon-green/30 rounded-full bg-neon-green/5">
-        <span class="w-2 h-2 bg-neon-green rounded-full animate-pulse"></span>
-        <span class="text-sm font-medium text-neon-green" data-i18n="live">Pronostics en direct</span>
-      </div>
-      <h1 class="text-4xl md:text-6xl font-black mb-4">
-        <span class="text-white">Pro</span><span class="grad">Score</span><span class="text-white"> AI</span>
-      </h1>
-      <p class="text-lg md:text-xl text-slate-400 mb-8 max-w-2xl mx-auto" data-i18n="hero">
-        Pronostics sportifs premium par IA — 100+ ligues football, NBA, ATP/WTA, NHL, NFL.
-      </p>
-      <div class="flex flex-wrap justify-center gap-3">
-        <div class="glass px-4 py-2 text-sm">⚽ 100+ Football</div>
-        <div class="glass px-4 py-2 text-sm">🏀 40 Basket</div>
-        <div class="glass px-4 py-2 text-sm">🎾 Grand Slams</div>
-        <div class="glass px-4 py-2 text-sm">🏒 NHL</div>
-        <div class="glass px-4 py-2 text-sm">🏈 NFL</div>
-      </div>
-    </div>
+  <!-- HERO -->
+  <section class="relative overflow-hidden py-12 text-center border-b border-dark-800">
+    <h1 class="text-4xl md:text-6xl font-black mb-3"><span class="text-white">Pro</span><span class="grad">Score</span><span class="text-white"> AI</span></h1>
+    <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">Pronostics sportifs haute précision alimentés par intelligence artificielle.</p>
   </section>
 
-  <!-- ========== TRIAL BANNER (affiché si essai actif) ========== -->
-  <div id="trialBanner" class="hidden max-w-7xl mx-auto px-4 mt-4">
-    <div class="bg-amber-900/30 border border-amber-500/40 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
-      <div class="flex items-center gap-3">
-        <span class="text-2xl">⏳</span>
-        <div>
-          <p class="text-amber-300 font-bold text-sm" id="trialText">Période d'essai : 3 jours restants</p>
-          <p class="text-amber-400/60 text-xs">Abonnez-vous pour un accès illimité</p>
-        </div>
-      </div>
-      <button onclick="subscribe('silver')" class="px-4 py-2 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl text-sm">
-        S'abonner maintenant
-      </button>
-    </div>
-  </div>
-
-  <!-- ========== TRIAL EXPIRED OVERLAY ========== -->
-  <div id="trialExpiredOverlay" class="hidden fixed inset-0 z-40 bg-dark-900/95 backdrop-blur-lg flex items-center justify-center p-4">
-    <div class="glass p-8 max-w-md w-full text-center animate-slide-up">
-      <p class="text-6xl mb-4">🔒</p>
-      <h2 class="text-2xl font-black text-white mb-3">Période d'essai terminée</h2>
-      <p class="text-slate-400 mb-6">
-        Votre essai gratuit de 3 jours a expiré. Abonnez-vous pour continuer à accéder aux pronostics premium.
-      </p>
-      <div class="space-y-3">
-        <button onclick="subscribe('silver')" class="w-full py-3 border border-slate-600 hover:border-neon-green text-white rounded-xl font-semibold">
-          Silver — $19/mois
-        </button>
-        <button onclick="subscribe('gold')" class="w-full py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 rounded-xl font-bold">
-          Gold — $39/mois ⭐
-        </button>
-        <button onclick="subscribe('vip')" class="w-full py-3 border border-orange-500 hover:bg-orange-500/10 text-white rounded-xl font-semibold">
-          VIP — $79/mois
-        </button>
-      </div>
-      <button onclick="logout()" class="mt-4 text-sm text-slate-500 hover:text-slate-300">Se déconnecter</button>
-    </div>
-  </div>
-
-  <!-- ========== DASHBOARD ========== -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-      <h2 class="text-3xl font-black text-white mb-2" data-i18n="dashTitle">Pronostics du jour</h2>
-      <p class="text-slate-400" data-i18n="dashSub">Sélections IA sur tous les sports et ligues</p>
-    </div>
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-      <div id="sportTabs" class="flex items-center gap-2 overflow-x-auto pb-2 w-full sm:w-auto"></div>
-      <input type="date" id="dateSel" class="bg-dark-800 border border-dark-600 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-neon-green" />
-    </div>
-    <div id="msgArea"></div>
-    <div id="matchesBox" class="space-y-8"></div>
-    <div id="loader" class="hidden text-center py-16">
-      <div class="inline-block animate-spin h-10 w-10 border-4 border-neon-green border-t-transparent rounded-full"></div>
-    </div>
-    <div id="emptyBox" class="hidden text-center py-16">
-      <p class="text-5xl mb-4">📭</p>
-      <p class="text-slate-400 text-lg" data-i18n="noMatch">Aucun match trouvé</p>
-    </div>
-  </main>
-
-  <!-- ========== PRICING ========== -->
-  <section class="max-w-6xl mx-auto px-4 py-16">
-    <div class="text-center mb-12">
-      <h2 class="text-3xl font-black text-white mb-2">Choose Your <span class="grad">Plan</span></h2>
-      <p class="text-slate-400">Cancel anytime. All plans include all 5 sports.</p>
-    </div>
-    <div class="grid md:grid-cols-3 gap-6">
-      <div class="glass p-6 border-t-4 border-gray-400 hover:scale-105 transition-transform">
-        <h3 class="text-xl font-bold text-white">Silver</h3>
-        <p class="text-4xl font-black text-white mt-2">$19<span class="text-sm font-normal text-slate-400">/mo</span></p>
-        <ul class="mt-4 space-y-2 text-sm text-slate-300"><li>✓ 1X2 Results</li><li>✓ Total Goals</li><li>✓ BTTS</li><li>✓ All Sports</li></ul>
-        <button onclick="subscribe('silver')" class="w-full mt-6 py-3 border border-slate-600 hover:border-neon-green text-white rounded-xl font-semibold">Get Silver</button>
-      </div>
-      <div class="glass p-6 border-t-4 border-yellow-500 ring-2 ring-yellow-500/30 md:scale-105 relative">
-        <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-xs font-black bg-yellow-500 text-dark-900 rounded-full">POPULAR</span>
-        <h3 class="text-xl font-bold text-white">Gold</h3>
-        <p class="text-4xl font-black text-white mt-2">$39<span class="text-sm font-normal text-slate-400">/mo</span></p>
-        <ul class="mt-4 space-y-2 text-sm text-slate-300"><li>✓ Silver +</li><li>✓ 🎯 Exact Score</li><li>✓ 📊 Corners & Fouls</li><li>✓ Double Chance</li></ul>
-        <button onclick="subscribe('gold')" class="w-full mt-6 py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 rounded-xl font-bold">Get Gold</button>
-      </div>
-      <div class="glass p-6 border-t-4 border-orange-500 hover:scale-105 transition-transform">
-        <h3 class="text-xl font-bold text-white">VIP</h3>
-        <p class="text-4xl font-black text-white mt-2">$79<span class="text-sm font-normal text-slate-400">/mo</span></p>
-        <ul class="mt-4 space-y-2 text-sm text-slate-300"><li>✓ Gold +</li><li>✓ ⚽ Goalscorers</li><li>✓ 🏆 Asian Handicap</li><li>✓ 📝 Analyst Notes</li></ul>
-        <button onclick="subscribe('vip')" class="w-full mt-6 py-3 border border-orange-500 hover:bg-orange-500/10 text-white rounded-xl font-semibold">Get VIP</button>
-      </div>
-    </div>
-  </section>
-
-  <footer class="border-t border-dark-800 py-8 text-center">
-    <p class="text-slate-500 text-sm">© <span id="yr"></span> ProScore AI. All rights reserved.</p>
-  </footer>
-
-  <!-- ========== AUTH MODAL ========== -->
-  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass p-8 w-full max-w-md animate-slide-up">
+  <!-- PANNEAU ADMIN (Directement intégré) -->
+  <div id="adminSection" class="hidden max-w-7xl mx-auto px-4 py-8 border-b border-dark-700 bg-dark-950/80">
+    <div class="glass p-6 border-neon-purple/30">
       <div class="flex items-center justify-between mb-6">
-        <h3 id="authTitle" class="text-2xl font-bold text-white">Connexion</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-white text-2xl">×</button>
+        <h2 class="text-2xl font-bold text-white flex items-center gap-2">⚙️ Panneau Administration <span class="text-xs px-2 py-0.5 bg-neon-purple/20 text-neon-purple rounded-full">ADMIN</span></h2>
+        <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white">✕ Fermer</button>
       </div>
-      <div id="authErr" class="hidden p-3 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-sm mb-4"></div>
-      <div id="authOk" class="hidden p-3 bg-emerald-900/30 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm mb-4"></div>
 
-      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
-        <!-- Nom (inscription uniquement) -->
-        <div id="nameField" class="hidden">
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">Nom d'affichage</label>
-          <input type="text" id="dispName" placeholder="Jean Dupont"
-                 class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Formulaire de création de match & pronostic -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-neon-green">➕ Publier un nouveau Pronostic</h3>
+          <form onsubmit="adminCreatePrediction(event)" class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <select id="admSport" required class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm">
+                <option value="football">⚽ Football</option>
+                <option value="basketball">🏀 Basketball</option>
+                <option value="tennis">🎾 Tennis</option>
+                <option value="hockey">🏒 Hockey</option>
+                <option value="american_football">🏈 Foot US</option>
+              </select>
+              <input type="text" id="admLeague" placeholder="Ligue (ex: Ligue 1)" required class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="admHome" placeholder="Équipe Domicile" required class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+              <input type="text" id="admAway" placeholder="Équipe Extérieur" required class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="datetime-local" id="admDate" required class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+              <select id="admTier" class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm">
+                <option value="silver">🥈 Silver</option>
+                <option value="gold" selected>🥇 Gold</option>
+                <option value="vip">💎 VIP</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="adm1X2" placeholder="1X2 (1, X, ou 2)" class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+              <input type="text" id="admScore" placeholder="Score Exact (ex: 2-1)" class="p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+            </div>
+            <input type="text" id="admGoals" placeholder="Total Buts (ex: Over 2.5)" class="w-full p-2.5 bg-dark-800 border border-dark-600 rounded-xl text-sm" />
+            <button type="submit" class="w-full py-3 bg-neon-green text-dark-900 font-bold rounded-xl hover:opacity-90">🚀 Publier Immédiatement</button>
+          </form>
         </div>
 
-        <!-- Email -->
+        <!-- Liste des utilisateurs -->
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
-          <input type="email" id="authEmail" required placeholder="vous@exemple.com"
-                 class="w-full px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
-        </div>
-
-        <!-- Mot de passe avec icône ŒIL 👁️ -->
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">Mot de passe</label>
-          <div class="pw-wrap">
-            <input type="password" id="authPw" required placeholder="••••••••" minlength="6"
-                   class="w-full px-4 py-3 pr-12 bg-dark-800 border border-dark-600 rounded-xl text-white focus:outline-none focus:border-neon-green" />
-            <button type="button" class="pw-toggle" onclick="toggleEye('authPw', this)" aria-label="Afficher le mot de passe">
-              <!-- Œil ouvert -->
-              <svg class="eye-on" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-              </svg>
-              <!-- Œil barré -->
-              <svg class="eye-off hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-              </svg>
-            </button>
+          <h3 class="text-lg font-bold text-neon-blue mb-3">👥 Liste des Utilisateurs</h3>
+          <div id="adminUsersList" class="space-y-2 max-h-80 overflow-y-auto pr-2">
+            <p class="text-slate-500 text-sm">Chargement des utilisateurs...</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <button type="submit" id="authBtn"
-                class="w-full py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl hover:opacity-90 transition">
-          Se connecter
-        </button>
+  <!-- DASHBOARD PUBLIC -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div id="sportTabs" class="flex items-center gap-2 overflow-x-auto pb-4"></div>
+    <div id="msgArea"></div>
+    <div id="matchesBox" class="space-y-8"></div>
+    <div id="loader" class="text-center py-12"><div class="inline-block animate-spin h-8 w-8 border-4 border-neon-green border-t-transparent rounded-full"></div></div>
+  </main>
+
+  <!-- AUTH MODAL -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass p-8 w-full max-w-md">
+      <div class="flex items-center justify-between mb-6">
+        <h3 id="authTitle" class="text-2xl font-bold text-white">Connexion</h3>
+        <button onclick="closeModal()" class="text-slate-400 text-2xl">×</button>
+      </div>
+      <div id="authErr" class="hidden p-3 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-sm mb-4"></div>
+
+      <form onsubmit="handleAuth(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Email</label>
+          <input type="email" id="authEmail" required placeholder="votre@email.com" class="w-full p-3 bg-dark-800 border border-dark-600 rounded-xl text-white" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-1">Mot de passe</label>
+          <div class="pw-wrap">
+            <input type="password" id="authPw" required placeholder="••••••••" class="w-full p-3 pr-12 bg-dark-800 border border-dark-600 rounded-xl text-white" />
+            <button type="button" class="pw-toggle" onclick="toggleEye('authPw', this)">👁️</button>
+          </div>
+        </div>
+        <button type="submit" id="authBtn" class="w-full py-3 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl">Se connecter</button>
       </form>
-
       <p class="text-center text-sm text-slate-400 mt-4">
         <span id="switchTxt">Pas de compte ?</span>
         <button onclick="flipMode()" class="text-neon-green hover:underline ml-1" id="switchBtn">S'inscrire</button>
@@ -253,407 +149,184 @@
     </div>
   </div>
 
-  <!-- ================================================================ -->
-  <!-- SCRIPT PRINCIPAL                                                  -->
-  <!-- ================================================================ -->
   <script>
-    // =============================================
-    // ⚠️ CONFIG SUPABASE — REMPLACEZ PAR LES VÔTRES
-    // Supabase → Settings → API
-    // =============================================
-    const SUPABASE_URL  = 'https://obkqpaiqccreoinxgodo.supabase.co';
-    const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ia3FwYWlxY2NyZW9pbnhnb2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDExMDksImV4cCI6MjEwNTA3NzEwOX0.iGabaA_ylID4S8CqeC1gpdjs9Px3R3ixauwQOOfmejg';
-
+    const SUPABASE_URL = 'https://obkqpaiqccreoinxgodo.supabase.co'; // ⚠️ Remplacer si besoin
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ia3FwYWlxY2NyZW9pbnhnb2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDExMDksImV4cCI6MjEwNTA3NzEwOX0.iGabaA_ylID4S8CqeC1gpdjs9Px3R3ixauwQOOfmejg';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // =============================================
-    // ÉTAT GLOBAL
-    // =============================================
-    let user = null;          // Supabase auth user
-    let profile = null;       // Ligne de la table "users"
-    let sport = 'all';
-    let date = new Date().toISOString().split('T')[0];
-    let mode = 'login';       // 'login' | 'register'
-    let lang = localStorage.getItem('ps_lang') || 'fr';
+    let user = null, profile = null, sport = 'all', mode = 'login';
 
-    // =============================================
-    // TRADUCTIONS
-    // =============================================
-    const I18N = {
-      fr: { live:'Pronostics en direct', hero:'Pronostics sportifs premium par IA — 100+ ligues.', dashTitle:'Pronostics du jour', dashSub:'Sélections IA tous sports', allSports:'Tous', football:'⚽ Football', basketball:'🏀 Basket', tennis:'🎾 Tennis', hockey:'🏒 Hockey', american_football:'🏈 Foot US', noMatch:'Aucun match', unlock:'Débloquer', exactScore:'Score Exact', totalGoals:'Total Buts', corners:'Corners', fouls:'Fautes', goalscorers:'Buteurs', confidence:'confiance', finalResult:'1X2 :', draw:'Nul', signIn:'Connexion', signUp:'Inscription', logout:'Déconnexion' },
-      en: { live:'Live Predictions', hero:'Premium AI Sports Predictions — 100+ leagues.', dashTitle:"Today's Predictions", dashSub:'AI picks all sports', allSports:'All', football:'⚽ Football', basketball:'🏀 Basketball', tennis:'🎾 Tennis', hockey:'🏒 Hockey', american_football:'🏈 NFL', noMatch:'No matches', unlock:'Unlock', exactScore:'Exact Score', totalGoals:'Total Goals', corners:'Corners', fouls:'Fouls', goalscorers:'Goalscorers', confidence:'confidence', finalResult:'1X2:', draw:'Draw', signIn:'Sign In', signUp:'Sign Up', logout:'Logout' },
-      es: { live:'Pronósticos en vivo', hero:'Pronósticos deportivos premium con IA.', dashTitle:'Pronósticos de hoy', dashSub:'Selecciones IA todos los deportes', allSports:'Todos', football:'⚽ Fútbol', basketball:'🏀 Baloncesto', tennis:'🎾 Tenis', hockey:'🏒 Hockey', american_football:'🏈 Fútbol americano', noMatch:'Sin partidos', unlock:'Desbloquear', exactScore:'Marcador', totalGoals:'Total Goles', corners:'Córners', fouls:'Faltas', goalscorers:'Goleadores', confidence:'confianza', finalResult:'1X2:', draw:'Empate', signIn:'Entrar', signUp:'Registrarse', logout:'Salir' },
-      ar: { live:'توقعات مباشرة', hero:'توقعات رياضية بالذكاء الاصطناعي', dashTitle:'توقعات اليوم', dashSub:'اختيارات جميع الرياضات', allSports:'الكل', football:'⚽ كرة القدم', basketball:'🏀 سلة', tennis:'🎾 تنس', hockey:'🏒 هوكي', american_football:'🏈 NFL', noMatch:'لا مباريات', unlock:'فتح', exactScore:'النتيجة', totalGoals:'أهداف', corners:'ركنيات', fouls:'أخطاء', goalscorers:'هدافون', confidence:'ثقة', finalResult:'1X2:', draw:'تعادل', signIn:'دخول', signUp:'حساب', logout:'خروج' },
-    };
-    const T = k => I18N[lang][k] || k;
-
-    const SPORTS = [
-      { k:'all', l:'allSports', i:'🏆' }, { k:'football', l:'football', i:'⚽' },
-      { k:'basketball', l:'basketball', i:'🏀' }, { k:'tennis', l:'tennis', i:'🎾' },
-      { k:'hockey', l:'hockey', i:'🏒' }, { k:'american_football', l:'american_football', i:'🏈' },
-    ];
-
-    // =============================================
-    // 👁️ ICÔNE ŒIL — Toggle mot de passe
-    // =============================================
-    function toggleEye(inputId, btn) {
-      const inp = document.getElementById(inputId);
-      const on  = btn.querySelector('.eye-on');
-      const off = btn.querySelector('.eye-off');
-      if (inp.type === 'password') {
-        inp.type = 'text';
-        on.classList.add('hidden');
-        off.classList.remove('hidden');
-      } else {
-        inp.type = 'password';
-        on.classList.remove('hidden');
-        off.classList.add('hidden');
-      }
+    function toggleEye(id, btn) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
     }
 
-    // =============================================
-    // ⏳ PÉRIODE D'ESSAI 3 JOURS
-    // =============================================
-    const TRIAL_DAYS = 3;
-
-    function checkTrial() {
-      const overlay = document.getElementById('trialExpiredOverlay');
-      const banner  = document.getElementById('trialBanner');
-      overlay.classList.add('hidden');
-      banner.classList.add('hidden');
-
-      if (!profile) return;
-
-      // Admin et abonnés : pas de restriction
-      if (profile.role === 'admin' || profile.role === 'subscriber') return;
-
-      // Rôle "free" → vérifier l'essai
-      const trialStart = profile.trial_start ? new Date(profile.trial_start) : new Date();
-      const now = new Date();
-      const daysElapsed = (now - trialStart) / (1000 * 60 * 60 * 24);
-      const daysLeft = Math.max(0, Math.ceil(TRIAL_DAYS - daysElapsed));
-
-      if (daysLeft <= 0) {
-        // Essai expiré → bloquer
-        overlay.classList.remove('hidden');
-      } else {
-        // Essai actif → afficher le bandeau
-        document.getElementById('trialText').innerText =
-          `Période d'essai : ${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}`;
-        banner.classList.remove('hidden');
-      }
-    }
-
-    // =============================================
-    // 🔐 AUTH SUPABASE
-    // =============================================
     function openModal(m) {
       mode = m;
       document.getElementById('authModal').classList.remove('hidden');
-      document.getElementById('authTitle').innerText = m === 'login' ? T('signIn') : T('signUp');
-      document.getElementById('authBtn').innerText   = m === 'login' ? T('signIn') : T('signUp');
-      document.getElementById('nameField').classList.toggle('hidden', m === 'login');
-      document.getElementById('switchTxt').innerText = m === 'login' ? 'Pas de compte ?' : 'Déjà un compte ?';
-      document.getElementById('switchBtn').innerText = m === 'login' ? T('signUp') : T('signIn');
-      document.getElementById('authErr').classList.add('hidden');
-      document.getElementById('authOk').classList.add('hidden');
+      document.getElementById('authTitle').innerText = m === 'login' ? 'Connexion' : 'Inscription';
+      document.getElementById('authBtn').innerText = m === 'login' ? 'Se connecter' : "S'inscrire";
     }
-    function closeModal() {
-      document.getElementById('authModal').classList.add('hidden');
-      document.getElementById('authForm').reset();
-    }
+    function closeModal() { document.getElementById('authModal').classList.add('hidden'); }
     function flipMode() { openModal(mode === 'login' ? 'register' : 'login'); }
 
     async function handleAuth(e) {
       e.preventDefault();
-      const email = document.getElementById('authEmail').value.trim().toLowerCase();
-      const pw    = document.getElementById('authPw').value;
-      const name  = document.getElementById('dispName').value.trim();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPw').value;
       const errEl = document.getElementById('authErr');
-      const okEl  = document.getElementById('authOk');
-      const btn   = document.getElementById('authBtn');
       errEl.classList.add('hidden');
-      okEl.classList.add('hidden');
-      btn.disabled = true;
-      btn.innerText = '⏳ ...';
 
       try {
         if (mode === 'register') {
-          // 1. Créer le compte Supabase Auth
-          const { data, error } = await db.auth.signUp({
-            email, password: pw,
-            options: { data: { display_name: name || email.split('@')[0] } }
-          });
+          const { data, error } = await db.auth.signUp({ email, password });
           if (error) throw error;
-
-          // 2. Créer la ligne dans la table "users" avec trial_start = NOW()
           if (data.user) {
-            await db.from('users').upsert({
-              id: data.user.id,
-              email,
-              display_name: name || email.split('@')[0],
-              role: 'free',
-              password_hash: 'supabase_managed',
-              is_active: true,
-              trial_start: new Date().toISOString(),
-            }, { onConflict: 'id' });
+            await db.from('users').upsert({ id: data.user.id, email, role: 'free', password_hash: 'managed' });
           }
-
-          okEl.innerText = '✅ Compte créé !';
-          okEl.classList.remove('hidden');
-
-          if (data.session) {
-            user = data.user;
-            await loadProfile();
-            setTimeout(() => { closeModal(); render(); }, 1200);
-          } else {
-            setTimeout(() => openModal('login'), 2000);
-          }
+          alert('Compte créé ! Vous pouvez vous connecter.');
+          openModal('login');
         } else {
-          // Connexion
-          const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+          const { data, error } = await db.auth.signInWithPassword({ email, password });
           if (error) throw error;
           user = data.user;
           await loadProfile();
           closeModal();
-          render();
         }
       } catch (err) {
-        const msgs = {
-          'Invalid login credentials': '❌ Email ou mot de passe incorrect.',
-          'User already registered': '❌ Email déjà enregistré.',
-          'Email not confirmed': '⚠️ Confirmez votre email.',
-          'Password should be at least 6 characters': '❌ Mot de passe trop court (6 min).',
-        };
-        errEl.innerText = msgs[err.message] || `❌ ${err.message}`;
+        errEl.innerText = err.message;
         errEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = mode === 'login' ? T('signIn') : T('signUp');
       }
     }
 
     async function loadProfile() {
       if (!user) return;
-      const { data } = await db.from('users')
-        .select('id,email,display_name,role,trial_start')
-        .eq('id', user.id).maybeSingle();
-      profile = data || { role:'free', tier:null, trial_start: new Date().toISOString() };
+      const { data } = await db.from('users').select('*').eq('id', user.id).maybeSingle();
+      profile = data || { role: 'free' };
 
-      // Charger le tier actif
-      const { data: sub } = await db.from('subscriptions')
-        .select('tier,status').eq('user_id', user.id).eq('status','active')
-        .order('expires_at',{ascending:false}).limit(1).maybeSingle();
-      if (sub) { profile.tier = sub.tier; profile.role = 'subscriber'; }
+      // Si c'est un ADMIN -> afficher le bouton admin
+      if (profile.role === 'admin') {
+        document.getElementById('adminNavBtn').classList.remove('hidden');
+        loadAdminUsers();
+      } else {
+        document.getElementById('adminNavBtn').classList.add('hidden');
+      }
+      renderAuth();
+      loadMatches();
+    }
+
+    function toggleAdminPanel() {
+      document.getElementById('adminSection').classList.toggle('hidden');
+    }
+
+    async function adminCreatePrediction(e) {
+      e.preventDefault();
+      try {
+        const { data: m, error: e1 } = await db.from('matches').insert([{
+          sport: document.getElementById('admSport').value,
+          league_name: document.getElementById('admLeague').value,
+          team_home: document.getElementById('admHome').value,
+          team_away: document.getElementById('admAway').value,
+          match_date: new Date(document.getElementById('admDate').value).toISOString(),
+          status: 'scheduled'
+        }]).select().single();
+        if (e1) throw e1;
+
+        const { error: e2 } = await db.from('predictions').insert([{
+          match_id: m.id,
+          tier_required: document.getElementById('admTier').value,
+          final_result: document.getElementById('adm1X2').value || null,
+          exact_score: document.getElementById('admScore').value || null,
+          total_goals_points: document.getElementById('admGoals').value || null,
+          confidence_pct: 80
+        }]);
+        if (e2) throw e2;
+
+        alert('✅ Pronostic publié avec succès !');
+        e.target.reset();
+        loadMatches();
+      } catch (err) { alert('❌ Erreur: ' + err.message); }
+    }
+
+    async function loadAdminUsers() {
+      const { data } = await db.from('users').select('*').limit(20);
+      if (!data) return;
+      document.getElementById('adminUsersList').innerHTML = data.map(u => `
+        <div class="p-2.5 bg-dark-800 rounded-xl flex items-center justify-between text-xs">
+          <div><p class="font-bold text-white">${u.email}</p><p class="text-slate-400">${u.role}</p></div>
+          ${u.role !== 'admin' ? `<button onclick="makeUserAdmin('${u.id}')" class="px-2 py-1 bg-neon-purple/20 text-neon-purple rounded">Promouvoir Admin</button>` : '<span class="text-neon-green">Admin ✅</span>'}
+        </div>
+      `).join('');
+    }
+
+    async function makeUserAdmin(uid) {
+      await db.from('users').update({ role: 'admin' }).eq('id', uid);
+      loadAdminUsers();
     }
 
     async function logout() {
       await db.auth.signOut();
       user = null; profile = null;
-      render();
-    }
-
-    // =============================================
-    // 📊 MATCHS DEPUIS SUPABASE
-    // =============================================
-    async function loadMatches() {
-      const loader = document.getElementById('loader');
-      const empty  = document.getElementById('emptyBox');
-      const box    = document.getElementById('matchesBox');
-      const msg    = document.getElementById('msgArea');
-      loader.classList.remove('hidden');
-      empty.classList.add('hidden');
-      box.innerHTML = ''; msg.innerHTML = '';
-
-      try {
-        let q = db.from('matches').select(`
-          id,sport,league_name,team_home,team_away,match_date,status,score_home,score_away,
-          predictions(id,tier_required,final_result,exact_score,total_goals_points,
-            total_corners,total_fouls,goalscorers,both_teams_score,
-            confidence_pct,is_winning,analyst_note)
-        `).gte('match_date', `${date}T00:00:00Z`).lte('match_date', `${date}T23:59:59Z`)
-          .order('match_date',{ascending:true});
-
-        if (sport !== 'all') q = q.eq('sport', sport);
-        const { data, error } = await q;
-        if (error) throw error;
-        loader.classList.add('hidden');
-
-        const matches = (data||[]).map(r => ({
-          match: { id:r.id, sport:r.sport, league_name:r.league_name, team_home:r.team_home,
-            team_away:r.team_away, match_date:r.match_date, status:r.status,
-            score_home:r.score_home, score_away:r.score_away },
-          prediction: r.predictions?.[0] ? sanitize(r.predictions[0]) : null,
-        }));
-
-        if (!matches.length) { empty.classList.remove('hidden'); return; }
-        renderMatches(matches);
-      } catch (err) {
-        loader.classList.add('hidden');
-        msg.innerHTML = `<div class="p-4 bg-red-900/30 border border-red-500/30 rounded-xl text-red-400 text-center">⚠️ ${err.message}</div>`;
-      }
-    }
-
-    function sanitize(p) {
-      const role = profile?.role || 'free';
-      const tier = profile?.tier || null;
-      const H = { silver:1, gold:2, vip:3 };
-      if (role === 'admin') return p;
-      if (role === 'subscriber' && tier && H[tier] >= H[p.tier_required]) return p;
-      return { ...p, exact_score:'🔒', goalscorers:null, total_corners:'🔒', total_fouls:'🔒', asian_handicap:'🔒' };
-    }
-
-    function renderMatches(matches) {
-      const grouped = matches.reduce((a, m) => { (a[m.match.league_name]??=[]).push(m); return a; }, {});
-      document.getElementById('matchesBox').innerHTML = Object.entries(grouped).map(([lg, ms]) => `
-        <div class="animate-slide-up">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-1 h-6 bg-neon-green rounded-full"></div>
-            <h3 class="text-lg font-bold text-white">${lg}</h3>
-            <span class="text-xs text-slate-500">${ms.length} match${ms.length>1?'es':''}</span>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">${ms.map(renderCard).join('')}</div>
-        </div>`).join('');
-    }
-
-    const locked = v => v===null||v==='🔒';
-    const tierClr = { silver:'bg-slate-700/50 text-slate-300 border-slate-500/30', gold:'bg-yellow-900/50 text-yellow-400 border-yellow-500/30', vip:'bg-orange-900/50 text-orange-400 border-orange-500/30' };
-
-    function renderCard({ match:m, prediction:p }) {
-      const time = new Date(m.match_date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-      let res = '';
-      if (p?.final_result) res = p.final_result==='1'?m.team_home : p.final_result==='2'?m.team_away : T('draw');
-
-      return `<div class="glass p-5 hover:border-slate-600 transition-all">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-semibold text-slate-400 uppercase truncate">${m.league_name}</span>
-          ${p?`<span class="text-xs px-2 py-0.5 rounded-full font-bold border ${tierClr[p.tier_required]||tierClr.silver}">${p.tier_required.toUpperCase()}</span>`:''}
-        </div>
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex-1 min-w-0">
-            <p class="text-base font-bold text-white truncate">${m.team_home}</p>
-            <p class="text-base font-bold text-white truncate">${m.team_away}</p>
-          </div>
-          <div class="text-center px-3">
-            ${m.status==='finished'||m.status==='live'
-              ?`<p class="text-2xl font-black">${m.score_home??'-'} : ${m.score_away??'-'}</p>`
-              :`<p class="text-xl font-bold text-slate-300">${time}</p>`}
-          </div>
-        </div>
-        ${p?`
-          ${p.final_result?`<div class="flex items-center gap-3 mb-4 flex-wrap">
-            <span class="text-xs text-slate-400">${T('finalResult')}</span>
-            <span class="px-3 py-1 bg-neon-green/10 border border-neon-green/30 rounded-lg text-neon-green font-bold text-sm">${res}</span>
-            ${p.confidence_pct>0?`<span class="text-xs text-slate-400">${p.confidence_pct}% ${T('confidence')}</span>`:''}
-          </div>`:''}
-          <div class="space-y-2">
-            <h4 class="text-xs font-semibold text-slate-500 uppercase">Premium</h4>
-            <div class="grid grid-cols-2 gap-2">
-              ${mkMarket('exactScore',p.exact_score,p.tier_required,locked(p.exact_score))}
-              ${p.total_goals_points?`<div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20"><p class="text-xs text-slate-400">${T('totalGoals')}</p><p class="text-lg font-black neon">${p.total_goals_points}</p></div>`:''}
-              ${p.total_corners!==undefined?mkMarket('corners',p.total_corners,p.tier_required,locked(p.total_corners)):''}
-              ${p.total_fouls!==undefined?mkMarket('fouls',p.total_fouls,p.tier_required,locked(p.total_fouls)):''}
-            </div>
-            ${p.goalscorers!==undefined?mkScorers(p.goalscorers,p.tier_required,locked(p.goalscorers)):''}
-            ${p.analyst_note?`<div class="bg-dark-800/30 rounded-xl p-3 border border-dark-600"><p class="text-xs text-slate-400 mb-1">📝</p><p class="text-sm text-slate-200">${p.analyst_note}</p></div>`:''}
-          </div>
-        `:`<div class="text-center py-4 text-sm text-slate-500">Aucun pronostic</div>`}
-      </div>`;
-    }
-
-    function mkMarket(label, val, tier, isLocked) {
-      if (isLocked) return `<div class="relative overflow-hidden rounded-xl min-h-[80px]">
-        <div class="absolute inset-0 bg-gradient-to-br from-dark-700/60 to-dark-800/60"></div>
-        <div class="absolute inset-0 flex items-center justify-center opacity-20"><p class="text-2xl font-black text-slate-400">2-1</p></div>
-        <div class="absolute inset-0 backdrop-blur-md"></div>
-        <div class="relative z-10 flex flex-col items-center justify-center py-3 text-center">
-          <p class="text-xs text-slate-300 mb-2">${T(label)}</p>
-          <button onclick="subscribe('${tier}')" class="px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 animate-pulse-neon">🔒 ${T('unlock')}</button>
-        </div></div>`;
-      if (!val) return '';
-      return `<div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20"><p class="text-xs text-slate-400">${T(label)}</p><p class="text-lg font-black neon">${val}</p></div>`;
-    }
-
-    function mkScorers(g, tier, isLocked) {
-      if (isLocked) return `<div class="relative overflow-hidden rounded-xl min-h-[80px] mt-2">
-        <div class="absolute inset-0 bg-dark-700/60 backdrop-blur-md"></div>
-        <div class="relative z-10 flex flex-col items-center justify-center py-4 text-center">
-          <p class="text-xs text-slate-300 mb-2">⚽ ${T('goalscorers')}</p>
-          <button onclick="subscribe('vip')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 animate-pulse-neon">🔒 VIP</button>
-        </div></div>`;
-      if (!g||!g.length) return '';
-      return `<div class="bg-dark-800/50 rounded-xl p-3 border border-neon-green/20 mt-2"><p class="text-xs text-slate-400 mb-2">⚽ ${T('goalscorers')}</p><div class="flex flex-wrap gap-2">${g.map(s=>`<span class="px-3 py-1 bg-neon-green/10 text-neon-green text-sm font-semibold rounded-full border border-neon-green/30">${s}</span>`).join('')}</div></div>`;
-    }
-
-    // =============================================
-    // SPORTS TABS
-    // =============================================
-    function renderTabs() {
-      document.getElementById('sportTabs').innerHTML = SPORTS.map(s =>
-        `<button onclick="setSport('${s.k}')" class="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-          sport===s.k ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-dark-800 text-slate-300 border border-dark-700 hover:border-dark-600'
-        }">${s.i} ${T(s.l)}</button>`
-      ).join('');
-    }
-    function setSport(s) { sport=s; renderTabs(); loadMatches(); }
-
-    function subscribe(tier) {
-      if (!user) { openModal('register'); return; }
-      alert(`Redirection Stripe — Plan ${tier.toUpperCase()}\n\n(Configurez Stripe pour activer)`);
-    }
-
-    // =============================================
-    // LANGUE
-    // =============================================
-    function applyLang() {
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang==='ar'?'rtl':'ltr';
-      document.querySelectorAll('[data-i18n]').forEach(el => el.innerText = T(el.dataset.i18n));
-      renderTabs(); renderAuth(); loadMatches();
-    }
-    document.getElementById('langSel').addEventListener('change', e => {
-      lang = e.target.value; localStorage.setItem('ps_lang', lang); applyLang();
-    });
-
-    // =============================================
-    // RENDER GLOBAL
-    // =============================================
-    function renderAuth() {
-      const a = document.getElementById('authArea');
-      if (user && profile) {
-        const tier = profile.tier ? ` · ${profile.tier.toUpperCase()}` : '';
-        a.innerHTML = `<div class="text-right hidden sm:block"><p class="text-sm font-medium text-white">${user.email}</p><p class="text-xs text-slate-400 capitalize">${profile.role}${tier}</p></div><button onclick="logout()" class="text-sm text-slate-400 hover:text-red-400 px-3 py-2">${T('logout')}</button>`;
-      } else {
-        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-slate-300 hover:text-white px-3 py-2">${T('signIn')}</button><button onclick="openModal('register')" class="px-4 py-2 bg-gradient-to-r from-neon-green to-neon-blue text-dark-900 font-bold rounded-xl text-sm">${T('signUp')}</button>`;
-      }
-    }
-
-    function render() {
+      document.getElementById('adminNavBtn').classList.add('hidden');
+      document.getElementById('adminSection').classList.add('hidden');
       renderAuth();
-      checkTrial();
       loadMatches();
     }
 
-    // =============================================
-    // INIT
-    // =============================================
-    document.getElementById('yr').innerText = new Date().getFullYear();
-    document.getElementById('dateSel').value = date;
-    document.getElementById('dateSel').addEventListener('change', e => { date=e.target.value; loadMatches(); });
-    document.getElementById('langSel').value = lang;
+    function renderAuth() {
+      const a = document.getElementById('authArea');
+      if (user) {
+        a.innerHTML = `<span class="text-xs text-slate-300 font-bold hidden sm:inline">${user.email}</span>
+                       <button onclick="logout()" class="text-xs text-red-400 hover:underline">Déconnexion</button>`;
+      } else {
+        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-slate-300">Connexion</button>
+                       <button onclick="openModal('register')" class="px-3 py-1.5 bg-neon-green text-dark-900 font-bold rounded-xl text-sm">Inscription</button>`;
+      }
+    }
 
-    db.auth.onAuthStateChange(async (ev, session) => {
+    async function loadMatches() {
+      document.getElementById('loader').classList.remove('hidden');
+      try {
+        let q = db.from('matches').select(`*, predictions(*)`);
+        if (sport !== 'all') q = q.eq('sport', sport);
+        const { data, error } = await q;
+        if (error) throw error;
+        document.getElementById('loader').classList.add('hidden');
+        renderMatches(data || []);
+      } catch (err) {
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('msgArea').innerHTML = `<div class="p-3 bg-red-900/30 text-red-400 rounded-xl text-center text-sm">${err.message}</div>`;
+      }
+    }
+
+    function renderMatches(data) {
+      const box = document.getElementById('matchesBox');
+      if (!data.length) { box.innerHTML = '<p class="text-center text-slate-500">Aucun match disponible.</p>'; return; }
+      box.innerHTML = data.map(m => {
+        const p = m.predictions?.[0];
+        const isLocked = profile?.role !== 'admin' && profile?.role !== 'subscriber';
+        return `
+          <div class="glass p-5">
+            <div class="flex justify-between text-xs text-slate-400 mb-2 font-bold"><span>${m.league_name}</span><span>${m.sport.toUpperCase()}</span></div>
+            <div class="flex justify-between items-center mb-4"><span class="text-lg font-bold">${m.team_home} vs ${m.team_away}</span><span class="text-xs bg-dark-700 px-2 py-1 rounded">${new Date(m.match_date).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
+            ${p ? `
+              <div class="bg-dark-800 p-3 rounded-xl space-y-2">
+                <p class="text-xs text-slate-400">1X2: <b class="text-neon-green">${p.final_result || 'N/A'}</b></p>
+                <p class="text-xs text-slate-400">Score Exact: ${isLocked ? '<span class="text-amber-400">🔒 Reservé Abonnés</span>' : `<b class="text-neon-green">${p.exact_score}</b>`}</p>
+              </div>
+            ` : '<p class="text-xs text-slate-500">Pas encore de pronostic</p>'}
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await db.auth.getSession();
       if (session?.user) { user = session.user; await loadProfile(); }
-      else { user=null; profile=null; }
-      render();
+      renderAuth();
+      loadMatches();
     });
-
-    (async () => {
-      const { data:{ session } } = await db.auth.getSession();
-      if (session?.user) { user = session.user; await loadProfile(); }
-      applyLang();
-    })();
   </script>
 </body>
-</html> 
+</html>
