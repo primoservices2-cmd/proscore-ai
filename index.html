@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ProScore AI — Analyses & Pronostics Détaillés</title>
+  <title>ProScore AI — Analyses & Pronostics ELO</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    tailwind.config = { theme: { extend: { colors: { dark: { 700:'#1e293b', 800:'#0f172a', 900:'#020617' }, neon: { green:'#39FF14', blue:'#00D4FF' } } } } };
+    tailwind.config = { theme: { extend: { colors: { dark: { 600:'#334155', 700:'#1e293b', 800:'#0f172a', 900:'#020617' }, neon: { green:'#39FF14', blue:'#00D4FF', purple:'#BF40BF' } } } } };
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" />
   <style>
@@ -16,105 +16,111 @@
     .grad-text { background:linear-gradient(90deg,#39FF14,#00D4FF); -webkit-background-clip:text; color:transparent; }
     .blurred { filter: blur(6px); user-select: none; pointer-events: none; }
     .pw-toggle { position:absolute; right:12px; top:12px; cursor:pointer; }
+    .country-item { transition: all 0.2s; }
+    .country-item:hover { background: rgba(57,255,20,0.1); border-left: 3px solid #39FF14; }
+    .country-item.active { background: rgba(57,255,20,0.15); border-left: 3px solid #39FF14; color: #39FF14; }
+    .elo-bar { height: 6px; border-radius: 3px; background: linear-gradient(to right, #39FF14, #00D4FF); }
   </style>
 </head>
 <body class="min-h-screen">
 
   <!-- NAVBAR -->
-  <nav class="border-b border-dark-800 bg-dark-900/90 sticky top-0 z-50">
+  <nav class="border-b border-dark-800 bg-dark-900/95 sticky top-0 z-50 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <a href="/" class="font-black text-xl flex items-center gap-2">
-        <span class="w-8 h-8 bg-neon-green text-dark-900 flex items-center justify-center rounded-lg">PS</span>
-        <span>ProScore AI</span>
+        <span class="w-9 h-9 bg-gradient-to-br from-neon-green to-neon-blue rounded-lg flex items-center justify-center text-dark-900 font-black">PS</span>
+        <span>ProScore <span class="text-neon-green">AI</span></span>
       </a>
-      <div class="flex items-center gap-4">
-        <button id="btnAdmin" onclick="toggleAdmin()" class="hidden px-4 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white shadow-lg shadow-purple-500/30">
-          👑 ADMIN
-        </button>
-        <div id="authArea" class="flex items-center gap-3">
-          <!-- Les boutons apparaitront ici -->
-        </div>
+      <div class="flex items-center gap-3">
+        <button id="btnAdmin" onclick="toggleAdmin()" class="hidden px-4 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white">👑 ADMIN</button>
+        <div id="authArea" class="flex items-center gap-3"></div>
       </div>
     </div>
   </nav>
 
-  <!-- BANDEAUX -->
-  <div id="trialBanner" class="hidden bg-gradient-to-r from-amber-600 to-amber-800 text-white text-center py-2 text-sm font-bold shadow-lg">
-    ⏳ Période d'essai gratuit active. Il vous reste <span id="trialDaysLeft"></span> jour(s).
+  <!-- BANDEAU ESSAI -->
+  <div id="trialBanner" class="hidden bg-gradient-to-r from-amber-600 to-orange-700 text-white text-center py-2 text-sm font-bold shadow-md">
+    ⏳ Essai gratuit actif : Il vous reste <span id="trialDaysLeft">4</span> jour(s) — Accès complet aux pronostics
   </div>
 
   <!-- HERO -->
-  <header class="py-12 text-center px-4 relative overflow-hidden">
-    <h1 class="text-4xl md:text-5xl font-black mb-4">Analyse Sportive <span class="grad-text">Chirurgicale</span> par IA</h1>
-    <p class="text-slate-400 max-w-3xl mx-auto mb-6">De La Liga espagnole aux qualifications de la CAN et de la Coupe du Monde.<br/><b class="text-white">Créez un compte pour 4 jours d'essai gratuit.</b></p>
+  <header class="py-10 text-center px-4 relative overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[250px] bg-neon-blue/10 blur-[100px] rounded-full pointer-events-none"></div>
+    <h1 class="text-3xl md:text-5xl font-black mb-3 relative z-10">Pronostics <span class="grad-text">ELO IA</span> — 100 Championnats</h1>
+    <p class="text-slate-400 max-w-2xl mx-auto relative z-10 text-sm">Analyses tactiques avec Score ELO propriétaire pour chaque équipe. Inspiré des meilleurs modèles Elofoot et Foot-direct.</p>
   </header>
 
-  <!-- MOTEUR DE RECHERCHE (FILTRES EN CASCADE) -->
-  <div class="max-w-7xl mx-auto px-4 mb-8">
-    <div class="glass p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Sport</label>
-        <select id="fSport" onchange="updateFilters('sport')" class="w-full bg-dark-900 border border-dark-700 p-2.5 rounded-lg text-white font-bold focus:border-neon-green outline-none">
-          <option value="all">Tous les sports</option>
-          <option value="football">⚽ Football (Top 100)</option>
-          <option value="basketball">🏀 Basketball (Top 50)</option>
-          <option value="tennis">🎾 Tennis</option>
-          <option value="hockey">🏒 Hockey</option>
-          <option value="american_football">🏈 Foot US</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Zone / Continent</label>
-        <select id="fZone" onchange="updateFilters('zone')" class="w-full bg-dark-900 border border-dark-700 p-2.5 rounded-lg text-white focus:border-neon-green outline-none">
-          <option value="all">Toutes les zones</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Pays / Catégorie</label>
-        <select id="fCountry" onchange="updateFilters('country')" class="w-full bg-dark-900 border border-dark-700 p-2.5 rounded-lg text-white focus:border-neon-green outline-none">
-          <option value="all">Tous les pays</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Compétition</label>
-        <select id="fLeague" onchange="loadMatches()" class="w-full bg-dark-900 border border-dark-700 p-2.5 rounded-lg text-white focus:border-neon-green outline-none">
-          <option value="all">Toutes les compétitions</option>
-        </select>
-      </div>
-    </div>
+  <!-- ONGLETS SPORTS -->
+  <div class="max-w-7xl mx-auto px-4 mb-4">
+    <div id="sportTabs" class="flex gap-2 overflow-x-auto pb-2"></div>
   </div>
 
-  <!-- FLUX DES MATCHS -->
+  <!-- LAYOUT PRINCIPAL : Sidebar Pays + Contenu -->
   <main class="max-w-7xl mx-auto px-4 pb-12">
-    <div id="matchesBox" class="space-y-6">
-      <div class="text-center py-10 text-slate-500">Chargement des données...</div>
+    <div class="grid md:grid-cols-4 gap-4">
+
+      <!-- SIDEBAR : LISTE DES PAYS AVEC DRAPEAUX (Style Foot-Direct) -->
+      <aside class="md:col-span-1 glass p-4 max-h-[80vh] overflow-y-auto">
+        <h3 class="text-xs font-black text-slate-400 uppercase mb-3">🌍 Pays & Compétitions</h3>
+        <div id="countriesList" class="space-y-1 text-sm"></div>
+      </aside>
+
+      <!-- CONTENU CENTRAL : MATCHS + PRONOSTICS -->
+      <div class="md:col-span-3">
+        <!-- Filtre date -->
+        <div class="glass p-3 mb-4 flex items-center gap-3 flex-wrap">
+          <label class="text-xs text-slate-400 font-bold uppercase">📅 Date :</label>
+          <input type="date" id="dateFilter" onchange="renderMatches()" class="bg-dark-800 border border-dark-700 text-white px-3 py-1.5 rounded text-sm">
+          <span class="text-xs text-slate-500 ml-auto">Filtre actif : <span id="currentFilter" class="text-neon-green font-bold">Tous</span></span>
+        </div>
+
+        <!-- Section matchs -->
+        <div id="matchesBox" class="space-y-4">
+          <div class="text-center py-10 text-slate-500">Chargement des données...</div>
+        </div>
+      </div>
     </div>
   </main>
 
-  <!-- SECTION TARIFS (Pour s'abonner) -->
+  <!-- SECTION ABONNEMENTS -->
   <section class="max-w-6xl mx-auto px-4 py-12 border-t border-dark-800 text-center">
-    <h2 class="text-3xl font-black mb-8">Passez au niveau supérieur</h2>
+    <h2 class="text-3xl font-black mb-8">Débloquer les Pronostics Premium</h2>
     <div class="grid md:grid-cols-3 gap-6 text-left">
       <div class="glass p-6 border-t-4 border-slate-400">
-        <h3 class="text-xl font-bold">Silver</h3><p class="text-3xl font-black text-white my-2">$19/mo</p>
-        <p class="text-sm text-slate-400 mb-6">Pronostics de base (1X2, Scores).</p>
-        <button class="w-full py-2 bg-dark-800 border border-slate-500 rounded font-bold">S'abonner</button>
+        <h3 class="text-xl font-bold">Silver</h3>
+        <p class="text-3xl font-black text-white my-2">$19<span class="text-xs text-slate-400">/mois</span></p>
+        <ul class="text-sm text-slate-300 space-y-1 mb-4">
+          <li>✓ Pronostics 1X2 & scores exacts</li>
+          <li>✓ Scores ELO IA visibles</li>
+          <li>✓ 5 alertes équipes</li>
+        </ul>
+        <button onclick="subscribe('silver')" class="w-full py-2.5 bg-dark-800 border border-slate-500 rounded font-bold hover:bg-slate-700">S'abonner Silver</button>
       </div>
-      <div class="glass p-6 border-t-4 border-yellow-500 ring-2 ring-yellow-500/20">
-        <h3 class="text-xl font-bold">Gold <span class="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded-full">POPULAIRE</span></h3>
-        <p class="text-3xl font-black text-white my-2">$39/mo</p>
-        <p class="text-sm text-slate-400 mb-6">Analyses tactiques et compétitions internationales.</p>
-        <button class="w-full py-2 bg-yellow-500 text-black rounded font-bold">S'abonner</button>
+      <div class="glass p-6 border-t-4 border-yellow-500 ring-2 ring-yellow-500/20 relative">
+        <span class="absolute -top-3 right-4 px-3 py-0.5 bg-yellow-500 text-black rounded-full text-xs font-black">POPULAIRE</span>
+        <h3 class="text-xl font-bold">Gold</h3>
+        <p class="text-3xl font-black text-white my-2">$39<span class="text-xs text-slate-400">/mois</span></p>
+        <ul class="text-sm text-slate-300 space-y-1 mb-4">
+          <li>✓ Tout Silver +</li>
+          <li>✓ Analyses tactiques profondes</li>
+          <li>✓ 10 alertes équipes</li>
+        </ul>
+        <button onclick="subscribe('gold')" class="w-full py-2.5 bg-yellow-500 text-black rounded font-bold hover:bg-yellow-400">S'abonner Gold</button>
       </div>
       <div class="glass p-6 border-t-4 border-orange-500">
-        <h3 class="text-xl font-bold">VIP</h3><p class="text-3xl font-black text-white my-2">$79/mo</p>
-        <p class="text-sm text-slate-400 mb-6">Accès illimité, joueur clé, handicap asiatique.</p>
-        <button class="w-full py-2 bg-orange-600 text-white rounded font-bold">S'abonner</button>
+        <h3 class="text-xl font-bold">VIP</h3>
+        <p class="text-3xl font-black text-white my-2">$79<span class="text-xs text-slate-400">/mois</span></p>
+        <ul class="text-sm text-slate-300 space-y-1 mb-4">
+          <li>✓ Tout Gold +</li>
+          <li>✓ Buteurs & corners</li>
+          <li>✓ 15 alertes équipes</li>
+        </ul>
+        <button onclick="subscribe('vip')" class="w-full py-2.5 bg-orange-600 text-white rounded font-bold hover:bg-orange-500">S'abonner VIP</button>
       </div>
     </div>
   </section>
 
-  <!-- MODAL AUTHENTIFICATION -->
+  <!-- MODAL AUTH -->
   <div id="authModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass p-8 w-full max-w-md relative">
       <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 text-xl">✕</button>
@@ -122,7 +128,7 @@
       <div id="authErr" class="hidden p-3 bg-red-900/30 text-red-400 text-sm mb-4 rounded-lg"></div>
       
       <form onsubmit="handleAuth(event)" class="space-y-4">
-        <input type="email" id="authEmail" required placeholder="Votre Email" class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg text-white" />
+        <input type="email" id="authEmail" required placeholder="Email" class="w-full p-3 bg-dark-900 border border-dark-700 rounded-lg text-white" />
         <div class="relative">
           <input type="password" id="authPw" required placeholder="Mot de passe" class="w-full p-3 pr-10 bg-dark-900 border border-dark-700 rounded-lg text-white" />
           <span class="pw-toggle" onclick="toggleEye('authPw')">👁️</span>
@@ -130,45 +136,52 @@
         <button type="submit" id="authBtn" class="w-full py-3 bg-neon-green text-dark-900 font-black rounded-lg">Se connecter</button>
       </form>
       <p class="text-center text-sm text-slate-400 mt-4">
-        <span id="switchTxt">Nouveau ?</span> <button onclick="flipMode()" class="text-white hover:underline ml-1">Créer un compte</button>
+        <span id="switchTxt">Nouveau ?</span> <button onclick="flipMode()" class="text-white hover:underline ml-1">Créer un compte (4 jours gratuits)</button>
       </p>
     </div>
   </div>
 
-  <!-- PANNEAU ADMINISTRATEUR -->
+  <!-- PANNEAU ADMIN -->
   <div id="adminPanel" class="hidden fixed inset-0 z-[60] bg-black/95 overflow-y-auto p-4">
-    <div class="max-w-6xl mx-auto my-10 glass p-6">
+    <div class="max-w-6xl mx-auto my-8 glass p-6">
       <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-black text-purple-400">👑 Espace Administrateur</h2>
         <button onclick="toggleAdmin()" class="text-white bg-dark-800 px-3 py-1 rounded">✕ Fermer</button>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-8">
-        <!-- Liste des utilisateurs -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Utilisateurs -->
         <div class="bg-dark-900 p-4 border border-purple-500/30 rounded-xl">
-          <h3 class="font-bold text-white mb-4">👥 Base Utilisateurs</h3>
-          <div id="adminUserList" class="space-y-2 max-h-[400px] overflow-y-auto text-sm"></div>
+          <h3 class="font-bold text-white mb-3">👥 Utilisateurs (<span id="adminTotalUsers">0</span>)</h3>
+          <div id="adminUserList" class="space-y-2 max-h-96 overflow-y-auto text-xs"></div>
         </div>
 
-        <!-- Publier une analyse -->
+        <!-- Injecter Match -->
         <div class="bg-dark-900 p-4 border border-purple-500/30 rounded-xl">
-          <h3 class="font-bold text-white mb-4">📝 Injecter une Analyse</h3>
-          <form onsubmit="injectMatch(event)" class="space-y-3">
+          <h3 class="font-bold text-white mb-3">📝 Publier une Analyse</h3>
+          <form onsubmit="injectMatch(event)" class="space-y-2 text-xs">
             <select id="inLeagueId" required class="w-full p-2 bg-dark-800 text-white border border-dark-700 rounded">
-              <option value="">Sélectionnez d'abord un sport (gauche)</option>
+              <option value="">Sélectionner une compétition</option>
             </select>
             <div class="grid grid-cols-2 gap-2">
               <input id="inHome" placeholder="Équipe Domicile" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
               <input id="inAway" placeholder="Équipe Extérieure" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
             </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="number" id="inEloHome" placeholder="ELO Domicile (ex: 1850)" min="1000" max="2500" class="p-2 bg-dark-800 text-white rounded border border-dark-700">
+              <input type="number" id="inEloAway" placeholder="ELO Extérieur (ex: 1720)" min="1000" max="2500" class="p-2 bg-dark-800 text-white rounded border border-dark-700">
+            </div>
             <input type="datetime-local" id="inDate" required class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700">
             <div class="grid grid-cols-3 gap-2">
               <input id="in1X2" placeholder="1X2" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
-              <input id="inScore" placeholder="Score Exact" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
+              <input id="inScore" placeholder="Score" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
               <input type="number" id="inProb" placeholder="Proba %" required class="p-2 bg-dark-800 text-white rounded border border-dark-700">
             </div>
-            <textarea id="inAnalysis" placeholder="Analyse contextuelle détaillée..." required rows="3" class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700"></textarea>
-            <button type="submit" class="w-full py-3 bg-neon-green text-black font-bold rounded">Publier l'Analyse</button>
+            <input id="inCorners" placeholder="Corners (ex: +9.5)" class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700">
+            <input id="inFouls" placeholder="Fautes (ex: +22)" class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700">
+            <input id="inScorers" placeholder="Buteurs (séparés par ,)" class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700">
+            <textarea id="inAnalysis" placeholder="Analyse tactique IA..." required rows="2" class="w-full p-2 bg-dark-800 text-white rounded border border-dark-700"></textarea>
+            <button type="submit" class="w-full py-2.5 bg-neon-green text-black font-bold rounded">Publier</button>
           </form>
         </div>
       </div>
@@ -176,192 +189,230 @@
   </div>
 
   <script>
-    // =========================================================
-    // ⚠️ METTEZ VOS CLÉS SUPABASE ICI
-    // =========================================================
-    const SUPABASE_URL = 'https://obkqpaiqccreoinxgodo.supabase.co'; // <--- VOTRE URL
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ia3FwYWlxY2NyZW9pbnhnb2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDExMDksImV4cCI6MjEwNTA3NzEwOX0.iGabaA_ylID4S8CqeC1gpdjs9Px3R3ixauwQOOfmejg'; // <--- VOTRE CLÉ "anon" PUBLIC (TRÈS IMPORTANT)
-    // =========================================================
+    // ============================================================
+    // ⚠️ REMPLACEZ PAR VOS IDENTIFIANTS SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://obkqpaiqccreoinxgodo.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ia3FwYWlxY2NyZW9pbnhnb2RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk1MDExMDksImV4cCI6MjEwNTA3NzEwOX0.iGabaA_ylID4S8CqeC1gpdjs9Px3R3ixauwQOOfmejg'; // eyJhbGciOi...
+    // ============================================================
 
+    const ADMIN_EMAIL = 'primoservices2@gmail.com';
     const { createClient } = supabase;
-    
-    // Protection anti-crash si les clés sont vides ou invalides
-    let db;
-    try {
-      db = createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch (err) {
-      console.error("Erreur d'initialisation Supabase:", err);
-    }
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let user = null, profile = null, hasAccess = false, mode = 'login';
-    let allLeagues = [];
+    let allLeagues = [], allMatches = [];
+    let activeSport = 'football', activeLeagueId = 'all';
 
+    const SPORTS = [
+      { k:'football', l:'⚽ Football', flag:'⚽' },
+      { k:'basketball', l:'🏀 Basketball', flag:'🏀' },
+      { k:'tennis', l:'🎾 Tennis', flag:'🎾' },
+      { k:'hockey', l:'🏒 Hockey', flag:'🏒' },
+      { k:'american_football', l:'🏈 Foot US', flag:'🏈' }
+    ];
+
+    // ============================================================
+    // INIT
+    // ============================================================
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. On dessine TOUT DE SUITE les boutons (pour ne jamais bloquer l'utilisateur)
-      renderUI();
+      document.getElementById('dateFilter').valueAsDate = new Date();
+      renderSportTabs();
+      renderUI(); // Affiche les boutons TOUT DE SUITE
 
-      if(!db) {
-        document.getElementById('matchesBox').innerHTML = `<p class="text-red-500 text-center py-10">⚠️ Veuillez configurer SUPABASE_URL et SUPABASE_KEY ligne 392 du code.</p>`;
-        return;
-      }
-
-      // 2. On charge la session et les données de la base
       try {
-        await fetchLeaguesData();
+        await fetchLeagues();
+        await fetchMatches();
         const { data: { session } } = await db.auth.getSession();
-        if (session?.user) { 
-          user = session.user; 
-          await loadProfile(); 
-        }
+        if (session?.user) { user = session.user; await loadProfile(); }
       } catch (err) {
         console.error(err);
       } finally {
-        renderUI(); // On redessine avec les bonnes infos
-        loadMatches(); // On charge les matchs
+        renderUI();
+        renderCountries();
+        renderMatches();
       }
     });
 
     // ============================================================
-    // GESTION DES FILTRES (Zone > Pays > Ligue)
+    // DONNÉES
     // ============================================================
-    async function fetchLeaguesData() {
+    async function fetchLeagues() {
       const { data } = await db.from('leagues').select('*').order('country');
       allLeagues = data || [];
-      updateFilters('init');
     }
 
-    function updateFilters(level) {
-      const fSport = document.getElementById('fSport').value;
-      const fZone = document.getElementById('fZone');
-      const fCountry = document.getElementById('fCountry');
-      const fLeague = document.getElementById('fLeague');
-      const inLeagueId = document.getElementById('inLeagueId'); // Select Admin
-
-      let filtered = allLeagues;
-      if (fSport !== 'all') filtered = filtered.filter(l => l.sport === fSport);
-
-      if (level === 'init' || level === 'sport') {
-        const zones = [...new Set(filtered.map(l => l.zone))];
-        fZone.innerHTML = '<option value="all">Toutes les zones</option>' + zones.map(z => `<option value="${z}">${z}</option>`).join('');
-        fCountry.innerHTML = '<option value="all">Tous les pays</option>';
-        fLeague.innerHTML = '<option value="all">Toutes les compétitions</option>';
-      }
-
-      if (level === 'zone') {
-        if (fZone.value !== 'all') filtered = filtered.filter(l => l.zone === fZone.value);
-        const countries = [...new Set(filtered.map(l => l.country))];
-        fCountry.innerHTML = '<option value="all">Tous les pays</option>' + countries.map(c => `<option value="${c}">${c}</option>`).join('');
-        fLeague.innerHTML = '<option value="all">Toutes les compétitions</option>';
-      }
-
-      if (level === 'country') {
-        if (fZone.value !== 'all') filtered = filtered.filter(l => l.zone === fZone.value);
-        if (fCountry.value !== 'all') filtered = filtered.filter(l => l.country === fCountry.value);
-        fLeague.innerHTML = '<option value="all">Toutes les compétitions</option>' + filtered.map(l => `<option value="${l.id}">[${l.competition_type}] ${l.name}</option>`).join('');
-      }
-
-      // Mettre à jour le select Admin en parallèle
-      if (inLeagueId) {
-        inLeagueId.innerHTML = '<option value="">Sélectionner...</option>' + filtered.map(l => `<option value="${l.id}">[${l.country}] ${l.name}</option>`).join('');
-      }
-
-      if(level !== 'init') loadMatches();
+    async function fetchMatches() {
+      const { data } = await db.from('matches').select('*, leagues(*), predictions(*)').order('match_date', { ascending: true });
+      allMatches = data || [];
     }
 
     // ============================================================
-    // AFFICHAGE DES MATCHS ET DU PAYWALL
+    // ONGLETS SPORTS
     // ============================================================
-    async function loadMatches() {
+    function renderSportTabs() {
+      document.getElementById('sportTabs').innerHTML = SPORTS.map(s => `
+        <button onclick="setSport('${s.k}')" class="flex-shrink-0 px-5 py-2.5 rounded-lg text-sm font-bold transition ${activeSport === s.k ? 'bg-neon-green text-dark-900' : 'bg-dark-800 text-slate-300 hover:bg-dark-700'}">${s.l}</button>
+      `).join('');
+    }
+
+    function setSport(s) {
+      activeSport = s;
+      activeLeagueId = 'all';
+      renderSportTabs();
+      renderCountries();
+      renderMatches();
+    }
+
+    // ============================================================
+    // SIDEBAR PAYS (Style Foot-Direct)
+    // ============================================================
+    function renderCountries() {
+      const leagues = allLeagues.filter(l => l.sport === activeSport);
+      const grouped = {};
+      leagues.forEach(l => {
+        if (!grouped[l.country]) grouped[l.country] = { flag: l.flag, leagues: [] };
+        grouped[l.country].leagues.push(l);
+      });
+
+      let html = `<button onclick="filterByLeague('all', 'Tous les pays')" class="country-item ${activeLeagueId === 'all' ? 'active' : ''} w-full text-left px-3 py-2 rounded flex items-center gap-2">
+        <span>🌐</span> <span class="font-bold">Tous les pays</span>
+      </button>`;
+
+      Object.entries(grouped).forEach(([country, info]) => {
+        html += `<div class="mt-2">
+          <div class="text-xs font-bold text-slate-400 px-2 py-1 flex items-center gap-1">${info.flag} ${country}</div>
+          ${info.leagues.map(l => `
+            <button onclick="filterByLeague('${l.id}', '${info.flag} ${l.name}')" class="country-item ${activeLeagueId === l.id ? 'active' : ''} w-full text-left px-3 py-1.5 rounded text-xs">
+              ${l.name}
+            </button>
+          `).join('')}
+        </div>`;
+      });
+
+      document.getElementById('countriesList').innerHTML = html;
+    }
+
+    function filterByLeague(id, name) {
+      activeLeagueId = id;
+      document.getElementById('currentFilter').innerText = name;
+      renderCountries();
+      renderMatches();
+    }
+
+    // ============================================================
+    // AFFICHAGE MATCHS AVEC SCORE ELO
+    // ============================================================
+    function renderMatches() {
       const box = document.getElementById('matchesBox');
-      const lId = document.getElementById('fLeague').value;
-      const sSport = document.getElementById('fSport').value;
-      const sCountry = document.getElementById('fCountry').value;
+      const dateFilter = document.getElementById('dateFilter').value;
 
-      try {
-        // La requête Supabase (INNER JOIN avec leagues)
-        let q = db.from('matches').select('*, leagues!inner(*), predictions(*)').order('match_date', { ascending: false });
-        
-        if (lId !== 'all') q = q.eq('league_id', lId);
-        else if (sCountry !== 'all') q = q.eq('leagues.country', sCountry);
-        else if (sSport !== 'all') q = q.eq('leagues.sport', sSport);
+      let filtered = allMatches.filter(m => m.leagues?.sport === activeSport);
+      if (activeLeagueId !== 'all') filtered = filtered.filter(m => m.league_id === activeLeagueId);
+      if (dateFilter) filtered = filtered.filter(m => m.match_date && m.match_date.startsWith(dateFilter));
 
-        const { data } = await q;
+      if (filtered.length === 0) {
+        box.innerHTML = `<div class="glass p-10 text-center text-slate-500">
+          <p class="text-4xl mb-3">📭</p>
+          <p>Aucune analyse disponible pour ce filtre.</p>
+        </div>`;
+        return;
+      }
 
-        if (!data || data.length === 0) {
-          box.innerHTML = '<p class="text-center text-slate-500 py-10">Sélectionnez une compétition ou attendez les prochaines analyses IA.</p>';
-          return;
-        }
+      // Regrouper par compétition
+      const grouped = {};
+      filtered.forEach(m => {
+        const key = m.leagues?.name || 'Autre';
+        if (!grouped[key]) grouped[key] = { flag: m.leagues?.flag || '⚽', matches: [] };
+        grouped[key].matches.push(m);
+      });
 
-        box.innerHTML = data.map(m => {
-          const l = m.leagues;
-          const p = m.predictions?.[0];
-          if (!p) return '';
+      box.innerHTML = Object.entries(grouped).map(([league, info]) => `
+        <div>
+          <h2 class="text-sm font-black text-white uppercase bg-dark-800 inline-block px-3 py-1.5 rounded-lg mb-3 border border-dark-700">
+            ${info.flag} ${league}
+          </h2>
+          <div class="space-y-3">
+            ${info.matches.map(renderMatchCard).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
 
-          return `
-            <div class="glass p-6 md:p-8 rounded-2xl relative overflow-hidden">
-              <div class="flex justify-between items-start mb-6 border-b border-dark-700 pb-4">
-                <div>
-                  <span class="text-[10px] font-black tracking-widest text-slate-400 uppercase bg-dark-800 px-2.5 py-1 rounded">
-                    🌍 ${l.zone} › ${l.country} › ${l.competition_type}
-                  </span>
-                  <p class="text-xs text-neon-blue font-bold mt-2 uppercase">${l.name}</p>
-                  <h3 class="text-2xl font-black text-white mt-1">${m.team_home} vs ${m.team_away}</h3>
-                </div>
-                <div class="text-right bg-dark-900 border border-dark-700 rounded-lg p-2 px-4">
-                  <p class="text-[10px] text-slate-400 font-bold uppercase">FIABILITÉ IA</p>
-                  <p class="text-xl font-black text-neon-green">${p.win_probability}%</p>
-                </div>
+    function renderMatchCard(m) {
+      const p = m.predictions?.[0] || {};
+      const time = new Date(m.match_date).toLocaleString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      
+      // Calcul ELO — Style Elofoot
+      const eloH = m.elo_home || 1500;
+      const eloA = m.elo_away || 1500;
+      const eloDiff = eloH - eloA;
+      const homeFav = eloDiff > 0;
+      const eloPct = Math.min(100, Math.max(0, 50 + (eloDiff / 10)));
+
+      const lockOrShow = (val) => {
+        if (!val) return '<span class="text-slate-500">-</span>';
+        if (hasAccess) return `<span class="text-neon-green font-black">${val}</span>`;
+        return `<span class="relative"><span class="blurred text-neon-green font-black">${val}</span><span class="absolute inset-0 flex items-center justify-center">🔒</span></span>`;
+      };
+
+      return `
+        <div class="glass p-4 hover:border-neon-green/30 transition">
+          <!-- En-tête : Heure + Score ELO -->
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-slate-400 font-bold uppercase">${time}</span>
+            <span class="text-xs bg-dark-800 px-2 py-1 rounded">Fiabilité IA : <b class="text-neon-green">${p.win_probability || 75}%</b></span>
+          </div>
+
+          <!-- Confrontation ELO (Style Elofoot) -->
+          <div class="bg-dark-900/60 p-3 rounded-lg mb-3">
+            <div class="grid grid-cols-3 items-center gap-2 mb-2">
+              <div class="text-right">
+                <p class="font-black text-white text-sm">${m.team_home}</p>
+                <p class="text-xs text-neon-blue font-bold">ELO ${eloH}</p>
               </div>
-
-              <!-- L'ANALYSE ACCROCHEUSE (Visible pour tous) -->
-              <div class="mb-6">
-                <h4 class="font-bold text-white mb-2 flex items-center gap-2">🧠 Rapport de l'Intelligence Artificielle</h4>
-                <p class="text-sm text-slate-300 leading-relaxed italic border-l-2 border-neon-blue pl-3">"${p.ai_context}"</p>
+              <div class="text-center">
+                <p class="text-xs text-slate-500 uppercase">vs</p>
+                <div class="elo-bar mt-1" style="width: 100%;"></div>
+                <p class="text-[10px] text-slate-400 mt-1">${homeFav ? '🔵 Favori: '+m.team_home : eloDiff === 0 ? '⚖️ Équilibré' : '🔴 Favori: '+m.team_away}</p>
               </div>
-
-              <!-- PRONOSTIC (Débloqué si essai actif ou abonné) -->
-              ${hasAccess ? `
-                <div class="grid md:grid-cols-2 gap-4">
-                  <div class="bg-dark-900 p-4 rounded-xl border border-neon-green/30">
-                    <p class="text-xs text-slate-500 font-bold uppercase">Pronostic IA (1X2)</p>
-                    <p class="text-2xl font-black text-white">${p.final_result}</p>
-                  </div>
-                  <div class="bg-dark-900 p-4 rounded-xl border border-neon-blue/30">
-                    <p class="text-xs text-slate-500 font-bold uppercase">Score Exact Projeté</p>
-                    <p class="text-2xl font-black text-neon-blue">${p.exact_score}</p>
-                  </div>
-                </div>
-              ` : `
-                <!-- PAYWALL -->
-                <div class="relative rounded-xl border border-dark-700 bg-dark-900 p-6 overflow-hidden mt-4">
-                  <div class="blurred flex gap-4 opacity-40">
-                    <div class="flex-1 bg-dark-800 p-4 rounded"><p class="text-2xl font-black text-white">1</p></div>
-                    <div class="flex-1 bg-dark-800 p-4 rounded"><p class="text-2xl font-black text-neon-blue">2-1</p></div>
-                  </div>
-                  <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-dark-900/80">
-                    <p class="text-2xl mb-2">🔒</p>
-                    <h4 class="text-base font-bold text-white mb-1">Conclusion de l'IA Verrouillée</h4>
-                    <p class="text-xs text-slate-300 mb-3">Créez un compte pour voir le pronostic (4 jours offerts).</p>
-                    <button onclick="openModal('register')" class="px-5 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-sm">Débloquer (Gratuit 4j)</button>
-                  </div>
-                </div>
-              `}
+              <div class="text-left">
+                <p class="font-black text-white text-sm">${m.team_away}</p>
+                <p class="text-xs text-neon-blue font-bold">ELO ${eloA}</p>
+              </div>
             </div>
-          `;
-        }).join('');
-      } catch (e) { console.error(e); }
+          </div>
+
+          <!-- Analyse IA (VISIBLE pour attirer les visiteurs) -->
+          ${p.ai_context ? `
+            <div class="mb-3 p-3 bg-dark-800/60 border-l-2 border-neon-blue rounded">
+              <p class="text-[10px] font-bold text-neon-blue uppercase mb-1">🧠 Analyse Tactique IA</p>
+              <p class="text-xs text-slate-300 italic">"${p.ai_context}"</p>
+            </div>
+          ` : ''}
+
+          <!-- Pronostics -->
+          <div class="grid grid-cols-4 gap-2 text-center text-xs">
+            <div class="bg-dark-800 p-2 rounded"><p class="text-[9px] text-slate-500">1X2</p>${lockOrShow(p.final_result)}</div>
+            <div class="bg-dark-800 p-2 rounded"><p class="text-[9px] text-slate-500">SCORE</p>${lockOrShow(p.exact_score)}</div>
+            <div class="bg-dark-800 p-2 rounded"><p class="text-[9px] text-slate-500">CORNERS</p>${lockOrShow(p.total_corners)}</div>
+            <div class="bg-dark-800 p-2 rounded"><p class="text-[9px] text-slate-500">FAUTES</p>${lockOrShow(p.total_fouls)}</div>
+          </div>
+
+          ${!hasAccess ? `<button onclick="openModal('register')" class="w-full mt-3 py-2 bg-neon-green text-dark-900 font-bold rounded text-xs">🔓 Débloquer (4 jours gratuits)</button>` : ''}
+        </div>
+      `;
     }
 
     // ============================================================
-    // AUTHENTIFICATION & INTERFACE
+    // AUTH
     // ============================================================
     function openModal(m) {
       mode = m;
       document.getElementById('authModal').classList.remove('hidden');
       document.getElementById('authTitle').innerText = m === 'login' ? 'Connexion' : 'Créer un compte';
-      document.getElementById('authBtn').innerText = m === 'login' ? 'Se connecter' : "Commencer l'essai (4 jours)";
+      document.getElementById('authBtn').innerText = m === 'login' ? 'Se connecter' : "S'inscrire (Essai 4j)";
       document.getElementById('switchTxt').innerText = m === 'login' ? 'Nouveau ?' : 'Déjà inscrit ?';
-      document.getElementById('switchBtn').innerText = m === 'login' ? 'Créer un compte' : 'Se connecter';
     }
     function closeModal() { document.getElementById('authModal').classList.add('hidden'); }
     function flipMode() { openModal(mode === 'login' ? 'register' : 'login'); }
@@ -378,13 +429,11 @@
         if (mode === 'register') {
           const { data, error } = await db.auth.signUp({ email, password: pw });
           if (error) throw error;
-          
           if (data.user) {
-            // Création du profil Supabase
-            await db.from('users').upsert({ id: data.user.id, email: email, role: 'free', trial_start: new Date().toISOString() });
+            await db.from('users').upsert({ id: data.user.id, email: email, role: email === ADMIN_EMAIL ? 'admin' : 'free', trial_start: new Date().toISOString() });
           }
           user = data.user;
-          alert('✅ Compte créé ! Votre essai de 4 jours commence.');
+          alert('✅ Compte créé ! 4 jours d\'essai activés.');
         } else {
           const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
           if (error) throw error;
@@ -392,6 +441,7 @@
         }
         await loadProfile();
         closeModal();
+        renderMatches();
       } catch (err) {
         errEl.innerText = err.message;
         errEl.classList.remove('hidden');
@@ -400,28 +450,27 @@
 
     async function loadProfile() {
       if (!user) return;
-      const { data } = await db.from('users').select('*').eq('id', user.id).single();
-      profile = data;
-      
-      // LOGIQUE D'ACCÈS
-      if (profile?.role === 'admin' || profile?.role === 'subscriber') {
+      const { data } = await db.from('users').select('*').eq('id', user.id).maybeSingle();
+      profile = data || { role: 'free', trial_start: new Date().toISOString() };
+
+      if (user.email === ADMIN_EMAIL && profile.role !== 'admin') {
+        await db.from('users').update({ role: 'admin' }).eq('id', user.id);
+        profile.role = 'admin';
+      }
+
+      if (profile.role === 'admin' || profile.role === 'subscriber') {
         hasAccess = true;
         document.getElementById('trialBanner').classList.add('hidden');
-      } else if (profile) {
-        const start = new Date(profile.trial_start || new Date());
-        const days = (new Date() - start) / (1000 * 60 * 60 * 24);
+      } else {
+        const days = (new Date() - new Date(profile.trial_start)) / (1000*60*60*24);
         hasAccess = days <= 4;
-        
-        if(hasAccess) {
-          document.getElementById('trialDaysLeft').innerText = Math.max(1, Math.ceil(4 - days));
+        if (hasAccess) {
+          document.getElementById('trialDaysLeft').innerText = Math.max(1, Math.ceil(4-days));
           document.getElementById('trialBanner').classList.remove('hidden');
-        } else {
-          document.getElementById('trialBanner').classList.add('hidden');
         }
       }
-      
+
       renderUI();
-      loadMatches();
     }
 
     async function logout() {
@@ -429,7 +478,7 @@
       user = null; profile = null; hasAccess = false;
       document.getElementById('trialBanner').classList.add('hidden');
       renderUI();
-      loadMatches();
+      renderMatches();
     }
 
     function renderUI() {
@@ -437,76 +486,97 @@
       document.getElementById('btnAdmin').classList.add('hidden');
 
       if (user) {
-        a.innerHTML = `<span class="text-sm font-bold text-slate-300 mr-4 hidden md:inline">${user.email}</span>
-                       <button onclick="logout()" class="text-sm text-red-400 hover:text-red-300 font-bold">Déconnexion</button>`;
-        if (profile?.role === 'admin' || user.email === 'primoservices2@gmail.com') {
+        a.innerHTML = `<span class="text-xs text-slate-300 hidden md:inline">${user.email}</span>
+                       <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 font-bold ml-2">Déconnexion</button>`;
+        if (profile?.role === 'admin' || user.email === ADMIN_EMAIL) {
           document.getElementById('btnAdmin').classList.remove('hidden');
         }
       } else {
-        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-white font-bold mr-4">Connexion</button>
-                       <button onclick="openModal('register')" class="px-4 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-sm">Essai Gratuit</button>`;
+        a.innerHTML = `<button onclick="openModal('login')" class="text-sm text-white font-bold">Connexion</button>
+                       <button onclick="openModal('register')" class="px-4 py-2 bg-neon-green text-dark-900 font-bold rounded-lg text-xs">Essai Gratuit 4j</button>`;
       }
     }
 
+    function subscribe(tier) {
+      if (!user) { openModal('register'); return; }
+      alert('Redirection Stripe pour le plan ' + tier.toUpperCase() + '\n(Configurez vos liens Stripe dans le panneau Admin)');
+    }
+
     // ============================================================
-    // PANNEAU ADMIN
+    // ADMIN
     // ============================================================
     function toggleAdmin() {
       const panel = document.getElementById('adminPanel');
       panel.classList.toggle('hidden');
       if (!panel.classList.contains('hidden')) {
         loadAdminUsers();
+        loadAdminLeagues();
       }
     }
 
     async function loadAdminUsers() {
       const { data } = await db.from('users').select('*').order('created_at', { ascending: false });
-      if(!data) return;
+      if (!data) return;
       document.getElementById('adminTotalUsers').innerText = data.length;
-      document.getElementById('adminUserList').innerHTML = data.map(u => {
-        let badge = '';
-        if(u.role === 'admin') badge = '<span class="text-purple-400 font-bold">Admin</span>';
-        else if(u.role === 'subscriber') badge = '<span class="text-neon-green font-bold">Abonné</span>';
-        else badge = '<span class="text-amber-400">Gratuit</span>';
-
-        return `
-          <div class="flex justify-between items-center p-3 bg-dark-800 rounded border border-dark-700">
-            <div><p class="font-bold text-white">${u.email}</p><p class="text-xs mt-1">${badge}</p></div>
-            ${u.role === 'free' ? `<button onclick="grantSub('${u.id}')" class="px-3 py-1 bg-neon-green/20 hover:bg-neon-green/40 text-neon-green font-bold text-xs rounded border border-neon-green/30">+ Offrir Abonnement</button>` : ''}
+      document.getElementById('adminUserList').innerHTML = data.map(u => `
+        <div class="flex justify-between items-center p-2 bg-dark-800 rounded border border-dark-700">
+          <div>
+            <p class="font-bold text-white">${u.email}</p>
+            <p class="text-[10px] text-slate-400">${u.role.toUpperCase()}</p>
           </div>
-        `;
-      }).join('');
+          ${u.role === 'free' ? `<button onclick="grantSub('${u.id}')" class="px-2 py-1 bg-neon-green/20 text-neon-green rounded text-[10px] font-bold">+ Abonner</button>` : ''}
+        </div>
+      `).join('');
     }
 
     async function grantSub(uid) {
-      if(confirm('Offrir 30 jours d\'abonnement à cet utilisateur ?')) {
+      if (confirm('Offrir 30 jours d\'abonnement ?')) {
         await db.from('users').update({ role: 'subscriber' }).eq('id', uid);
         loadAdminUsers();
       }
     }
 
+    function loadAdminLeagues() {
+      const leagues = allLeagues.filter(l => l.sport === activeSport);
+      document.getElementById('inLeagueId').innerHTML = '<option value="">Sélectionner...</option>' +
+        leagues.map(l => `<option value="${l.id}">${l.flag} ${l.country} - ${l.name}</option>`).join('');
+    }
+
     async function injectMatch(e) {
       e.preventDefault();
       try {
-        const { data: m, error: err1 } = await db.from('matches').insert([{
-          sport: document.getElementById('fSport').value === 'all' ? 'football' : document.getElementById('fSport').value,
-          league_id: document.getElementById('inLeagueId').value,
-          league_name: document.getElementById('inLeagueId').options[document.getElementById('inLeagueId').selectedIndex].text.split('] ')[1],
+        const leagueId = document.getElementById('inLeagueId').value;
+        const league = allLeagues.find(l => l.id === leagueId);
+
+        const { data: m, error: e1 } = await db.from('matches').insert([{
+          sport: league?.sport || 'football',
+          league_id: leagueId,
+          league_name: league?.name || 'Match',
           team_home: document.getElementById('inHome').value,
           team_away: document.getElementById('inAway').value,
+          elo_home: parseInt(document.getElementById('inEloHome').value) || 1500,
+          elo_away: parseInt(document.getElementById('inEloAway').value) || 1500,
           match_date: new Date(document.getElementById('inDate').value).toISOString(),
+          status: 'scheduled'
         }]).select().single();
-        if (err1) throw err1;
+        if (e1) throw e1;
 
+        const scorers = document.getElementById('inScorers').value;
         await db.from('predictions').insert([{
           match_id: m.id,
           final_result: document.getElementById('in1X2').value,
           exact_score: document.getElementById('inScore').value,
+          total_corners: document.getElementById('inCorners').value || null,
+          total_fouls: document.getElementById('inFouls').value || null,
+          goalscorers: scorers ? scorers.split(',').map(s => s.trim()) : null,
           win_probability: parseInt(document.getElementById('inProb').value),
-          ai_context: document.getElementById('inAnalysis').value,
+          ai_context: document.getElementById('inAnalysis').value
         }]);
 
-        alert('✅ Analyse IA publiée !'); e.target.reset(); loadMatches(); toggleAdmin();
+        alert('✅ Analyse publiée !');
+        e.target.reset();
+        await fetchMatches();
+        renderMatches();
       } catch (err) { alert('Erreur: ' + err.message); }
     }
   </script>
